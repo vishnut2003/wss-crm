@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
+import { auth } from "@/config/auth";
+import AuthSessionProvider from "@/providers/session-provider";
 import "./globals.css";
 
 const rubik = Rubik({
@@ -14,14 +16,18 @@ export const metadata: Metadata = {
     "Create your own workspace and run your customer relationships your way. Pipelines, contacts, deals, and automations — built for teams of any size.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" className={`${rubik.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <AuthSessionProvider session={session}>{children}</AuthSessionProvider>
+      </body>
     </html>
   );
 }

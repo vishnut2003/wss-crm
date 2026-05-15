@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
-import { auth } from "@/config/auth";
 import AuthSessionProvider from "@/providers/session-provider";
 import "./globals.css";
 
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
     "Create your own workspace and run your customer relationships your way. Pipelines, contacts, deals, and automations — built for teams of any size.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

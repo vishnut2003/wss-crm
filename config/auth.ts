@@ -9,6 +9,10 @@ class InvalidCredentialsError extends CredentialsSignin {
   code = "invalid_credentials";
 }
 
+class WrongProviderError extends CredentialsSignin {
+  code = "wrong_provider";
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: {
@@ -41,9 +45,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         await connectDB();
         const user = await User.findOne({ email }).select(
-          "+password name email role emailVerified",
+          "+password name email role providers",
         );
         if (!user) throw new InvalidCredentialsError();
+
+        if (!user.providers.includes("credentials") || !user.password) {
+          throw new WrongProviderError();
+        }
 
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) throw new InvalidCredentialsError();
@@ -72,17 +80,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         dbUser = await User.create({
           name: profile.name ?? user.name ?? email,
           email,
-          password: await bcrypt.hash(crypto.randomUUID(), 10),
+          image: profile.picture ?? null,
           role: "owner",
           emailVerified: profile.email_verified === true,
+          providers: ["google"],
+          googleId: account.providerAccountId,
         });
-      } else if (profile.email_verified && !dbUser.emailVerified) {
-        dbUser.emailVerified = true;
-        await dbUser.save();
+      } else {
+        let dirty = false;
+        if (!dbUser.providers.includes("google")) {
+          dbUser.providers.push("google");
+          dirty = true;
+        }
+        if (!dbUser.googleId) {
+          dbUser.googleId = account.providerAccountId;
+          dirty = true;
+        }
+        if (profile.email_verified && !dbUser.emailVerified) {
+          dbUser.emailVerified = true;
+          dirty = true;
+        }
+        const googlePicture =
+          typeof profile.picture === "string" ? profile.picture : null;
+        if (googlePicture && dbUser.image !== googlePicture) {
+          dbUser.image = googlePicture;
+          dirty = true;
+        }
+        if (dirty) await dbUser.save();
       }
 
       user.id = dbUser.id;
       user.role = dbUser.role;
+      user.image = dbUser.image ?? null;
       return true;
     },
     async jwt({ token, user }) {

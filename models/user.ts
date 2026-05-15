@@ -10,6 +10,10 @@ export const USER_ROLES = [
 
 export type UserRole = (typeof USER_ROLES)[number];
 
+export const AUTH_PROVIDERS = ["credentials", "google"] as const;
+
+export type AuthProvider = (typeof AUTH_PROVIDERS)[number];
+
 const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -21,7 +25,14 @@ const userSchema = new Schema(
       trim: true,
       index: true,
     },
-    password: { type: String, required: true, select: false },
+    password: {
+      type: String,
+      select: false,
+      required: function (this: { providers?: AuthProvider[] }) {
+        return this.providers?.includes("credentials") ?? false;
+      },
+    },
+    image: { type: String, default: null },
     role: {
       type: String,
       enum: USER_ROLES,
@@ -29,6 +40,12 @@ const userSchema = new Schema(
       default: "owner",
     },
     emailVerified: { type: Boolean, default: false },
+    providers: {
+      type: [{ type: String, enum: AUTH_PROVIDERS }],
+      required: true,
+      default: [],
+    },
+    googleId: { type: String, default: null, sparse: true, index: true },
   },
   { timestamps: true },
 );

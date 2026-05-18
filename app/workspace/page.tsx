@@ -93,6 +93,7 @@ export default async function WorkspacePage() {
               <img
                 src={session.user.image}
                 alt=""
+                referrerPolicy="no-referrer"
                 className="h-5 w-5 rounded-full ring-1 ring-zinc-200 dark:ring-white/20"
               />
             ) : (

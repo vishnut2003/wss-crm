@@ -157,6 +157,7 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
                 <img
                   src={owner.image}
                   alt=""
+                  referrerPolicy="no-referrer"
                   className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700"
                 />
               ) : (
@@ -229,6 +230,7 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
                       <img
                         src={emp.image}
                         alt=""
+                        referrerPolicy="no-referrer"
                         className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700"
                       />
                     ) : (

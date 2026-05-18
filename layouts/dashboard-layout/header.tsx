@@ -121,6 +121,7 @@ export default function Header({ user, workspace }: HeaderProps) {
                 <img
                   src={user.image}
                   alt=""
+                  referrerPolicy="no-referrer"
                   className="h-6 w-6 rounded-[5px] ring-1 ring-zinc-200 dark:ring-zinc-700"
                 />
               ) : (

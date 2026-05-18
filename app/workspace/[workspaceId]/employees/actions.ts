@@ -257,3 +257,79 @@ export async function updateEmployee(
   revalidatePath(`/workspace/${workspaceId}/employees`);
   return { ok: true };
 }
+
+export type RemoveEmployeeState =
+  | { ok?: boolean; formError?: string }
+  | undefined;
+
+export async function removeEmployee(
+  workspaceId: string,
+  employeeId: string,
+): Promise<RemoveEmployeeState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { formError: "Your session expired. Please sign in again." };
+  }
+
+  if (
+    !mongoose.Types.ObjectId.isValid(workspaceId) ||
+    !mongoose.Types.ObjectId.isValid(employeeId)
+  ) {
+    return { formError: "Invalid identifier." };
+  }
+
+  await connectDB();
+
+  const workspace = await Workspace.findById(workspaceId);
+  if (!workspace) return { formError: "Workspace not found." };
+
+  const isOwner = String(workspace.owner) === session.user.id;
+  const actorMembership = workspace.members?.find(
+    (m) => String(m.user) === session.user!.id,
+  );
+  const actorRole: UserRole = isOwner
+    ? "owner"
+    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
+  const canManage =
+    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
+  if (!canManage) {
+    return { formError: "You don't have permission to remove employees." };
+  }
+
+  if (String(workspace.owner) === employeeId) {
+    return { formError: "The workspace owner can't be removed." };
+  }
+  if (session.user.id === employeeId) {
+    return { formError: "You can't remove yourself from the workspace." };
+  }
+
+  const membership = workspace.members?.find(
+    (m) => String(m.user) === employeeId,
+  );
+  if (!membership) {
+    return { formError: "This employee isn't part of the workspace." };
+  }
+
+  const allowedRoles = assignableRolesFor(actorRole);
+  if (!allowedRoles.includes(membership.role as UserRole)) {
+    return {
+      formError: "You're not allowed to remove a user with this role.",
+    };
+  }
+
+  workspace.members = workspace.members.filter(
+    (m) => String(m.user) !== employeeId,
+  ) as typeof workspace.members;
+
+  try {
+    await workspace.save();
+  } catch (err) {
+    console.error("[removeEmployee] workspace.save failed", err);
+    const message =
+      err instanceof Error ? err.message : "Couldn't remove the employee.";
+    return { formError: `${message} Please try again.` };
+  }
+
+  revalidatePath(`/workspace/${workspaceId}/employees`);
+  return { ok: true };
+}

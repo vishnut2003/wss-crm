@@ -49,14 +49,19 @@ export default function EditEmployeeButton({
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      formRef.current?.reset();
-      setName(employee.name);
-      setPassword("");
-      setRole(employee.role);
-      setState(undefined);
-    }
+    if (!next) formRef.current?.reset();
     setOpen(next);
+  };
+
+  // Re-seed from the latest props every time the popup opens.
+  // useState's initial value only runs once, so without this each
+  // reopen would show whatever state was left over from last edit.
+  const openPopup = () => {
+    setName(employee.name);
+    setPassword("");
+    setRole(employee.role);
+    setState(undefined);
+    setOpen(true);
   };
 
   const formAction = (formData: FormData) => {
@@ -79,7 +84,7 @@ export default function EditEmployeeButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openPopup}
         aria-label={`Edit ${employee.name}`}
         className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-white"
       >

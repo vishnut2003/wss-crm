@@ -7,10 +7,8 @@ import Input from "@/components/input";
 import Popup from "@/components/popup";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { USER_ROLES, type UserRole } from "@/lib/user";
+import { assignableRolesFor, type UserRole } from "@/lib/user";
 import { addEmployee, type AddEmployeeState } from "../actions";
-
-const assignableRoles = USER_ROLES.filter((r) => r !== "owner");
 
 const roleLabel: Record<UserRole, string> = {
   owner: "Owner",
@@ -23,14 +21,18 @@ const roleLabel: Record<UserRole, string> = {
 
 export default function AddEmployeeButton({
   workspaceId,
+  actorRole,
 }: {
   workspaceId: string;
+  actorRole: UserRole;
 }) {
+  const assignableRoles = assignableRolesFor(actorRole);
+  const defaultRole = assignableRoles[0] ?? "sales_executive";
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("sales_executive");
+  const [role, setRole] = useState<UserRole>(defaultRole);
   const [state, setState] = useState<AddEmployeeState>(undefined);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -41,7 +43,7 @@ export default function AddEmployeeButton({
       setName("");
       setEmail("");
       setPassword("");
-      setRole("sales_executive");
+      setRole(defaultRole);
       setState(undefined);
     }
     setOpen(next);

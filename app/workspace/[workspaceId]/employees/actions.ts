@@ -7,6 +7,7 @@ import { auth } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import User, { USER_ROLES, type UserRole } from "@/models/user";
 import Workspace from "@/models/workspace";
+import { assignableRolesFor } from "@/lib/user";
 
 export type AddEmployeeState =
   | {
@@ -76,12 +77,19 @@ export async function addEmployee(
   const actorMembership = workspace.members?.find(
     (m) => String(m.user) === session.user!.id,
   );
+  const actorRole: UserRole = isOwner
+    ? "owner"
+    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
   const canManage =
-    isOwner ||
-    (actorMembership &&
-      (actorMembership.role === "admin" || actorMembership.role === "hr"));
+    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
   if (!canManage) {
     return { formError: "You don't have permission to add employees." };
+  }
+
+  if (!assignableRolesFor(actorRole).includes(role)) {
+    return {
+      errors: { role: "You're not allowed to assign this role." },
+    };
   }
 
   let user = await User.findOne({ email });
@@ -184,10 +192,11 @@ export async function updateEmployee(
   const actorMembership = workspace.members?.find(
     (m) => String(m.user) === session.user!.id,
   );
+  const actorRole: UserRole = isOwner
+    ? "owner"
+    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
   const canManage =
-    isOwner ||
-    (actorMembership &&
-      (actorMembership.role === "admin" || actorMembership.role === "hr"));
+    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
   if (!canManage) {
     return { formError: "You don't have permission to edit employees." };
   }
@@ -201,6 +210,19 @@ export async function updateEmployee(
   );
   if (!membership) {
     return { formError: "This employee isn't part of the workspace." };
+  }
+
+  const allowedRoles = assignableRolesFor(actorRole);
+  const currentRole = membership.role as UserRole;
+  if (!allowedRoles.includes(currentRole)) {
+    return {
+      formError: "You're not allowed to edit a user with this role.",
+    };
+  }
+  if (!allowedRoles.includes(role)) {
+    return {
+      errors: { role: "You're not allowed to assign this role." },
+    };
   }
 
   const isSelf = session.user.id === employeeId;

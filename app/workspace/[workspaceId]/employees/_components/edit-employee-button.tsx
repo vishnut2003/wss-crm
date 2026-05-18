@@ -7,10 +7,8 @@ import Input from "@/components/input";
 import Popup from "@/components/popup";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { USER_ROLES, type UserRole } from "@/lib/user";
+import { assignableRolesFor, type UserRole } from "@/lib/user";
 import { updateEmployee, type UpdateEmployeeState } from "../actions";
-
-const assignableRoles = USER_ROLES.filter((r) => r !== "owner");
 
 const roleLabel: Record<UserRole, string> = {
   owner: "Owner",
@@ -23,6 +21,7 @@ const roleLabel: Record<UserRole, string> = {
 
 type EditEmployeeButtonProps = {
   workspaceId: string;
+  actorRole: UserRole;
   employee: {
     id: string;
     name: string;
@@ -34,9 +33,11 @@ type EditEmployeeButtonProps = {
 
 export default function EditEmployeeButton({
   workspaceId,
+  actorRole,
   employee,
   isSelf,
 }: EditEmployeeButtonProps) {
+  const assignableRoles = assignableRolesFor(actorRole);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(employee.name);
   const [password, setPassword] = useState("");

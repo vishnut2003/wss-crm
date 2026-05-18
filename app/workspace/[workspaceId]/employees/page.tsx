@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import User from "@/models/user";
-import type { UserRole } from "@/lib/user";
+import { assignableRolesFor, type UserRole } from "@/lib/user";
 import type { WorkspaceColor } from "@/lib/workspace";
 import { requireWorkspaceAccess } from "@/lib/workspace-access";
 import { cn } from "@/lib/cn";
@@ -139,7 +139,10 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
             </p>
           </div>
           {canManage ? (
-            <AddEmployeeButton workspaceId={workspace.id} />
+            <AddEmployeeButton
+              workspaceId={workspace.id}
+              actorRole={myRole}
+            />
           ) : null}
         </div>
 
@@ -271,9 +274,11 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
                       Joined {formatJoined(new Date(emp.joinedAt))}
                     </span>
 
-                    {canManage ? (
+                    {canManage &&
+                    assignableRolesFor(myRole).includes(emp.role) ? (
                       <EditEmployeeButton
                         workspaceId={workspace.id}
+                        actorRole={myRole}
                         employee={{
                           id: emp.id,
                           name: emp.name,

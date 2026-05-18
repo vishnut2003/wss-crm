@@ -1,5 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import {
+  ClipboardCheck,
+  ClipboardList,
   CreditCard,
   FileSpreadsheet,
   FileText,
@@ -37,15 +39,21 @@ export const navSections: NavSection[] = [
       { href: "/leads", label: "Leads & Prospects", icon: UserPlus },
       { href: "/customers", label: "Customers", icon: Users },
       { href: "/proposals", label: "Proposals", icon: FileText },
+      { href: "/quotations", label: "Quotations", icon: FileSpreadsheet },
     ],
   },
   {
     heading: "Accounts",
     items: [
-      { href: "/quotations", label: "Quotations", icon: FileSpreadsheet },
+      { href: "/sales-orders", label: "Sales Order", icon: ClipboardList },
       { href: "/sale-invoices", label: "Sale Invoice", icon: ReceiptText },
       { href: "/receipts", label: "Receipts", icon: Receipt },
       { href: "/recovery", label: "Recovery", icon: RotateCcw },
+      {
+        href: "/purchase-orders",
+        label: "Purchase Order",
+        icon: ClipboardCheck,
+      },
       {
         href: "/purchase-invoices",
         label: "Purchase Invoice",

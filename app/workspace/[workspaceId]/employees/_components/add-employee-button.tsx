@@ -7,17 +7,12 @@ import Input from "@/components/input";
 import Popup from "@/components/popup";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { assignableRolesFor, type UserRole } from "@/lib/user";
+import {
+  assignableRolesFor,
+  ROLE_LABEL,
+  type UserRole,
+} from "@/lib/user";
 import { addEmployee, type AddEmployeeState } from "../actions";
-
-const roleLabel: Record<UserRole, string> = {
-  owner: "Owner",
-  admin: "Admin",
-  sales_manager: "Sales Manager",
-  sales_executive: "Sales Executive",
-  accounts: "Accounts",
-  hr: "HR",
-};
 
 export default function AddEmployeeButton({
   workspaceId,
@@ -199,7 +194,7 @@ export default function AddEmployeeButton({
               >
                 {assignableRoles.map((r) => (
                   <option key={r} value={r}>
-                    {roleLabel[r]}
+                    {ROLE_LABEL[r]}
                   </option>
                 ))}
               </select>

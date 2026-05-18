@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import User from "@/models/user";
-import { assignableRolesFor, type UserRole } from "@/lib/user";
+import {
+  assignableRolesFor,
+  canManageEmployees,
+  EMPLOYEE_MANAGER_ROLES,
+  ROLE_BADGE_CLASS,
+  ROLE_LABEL,
+  type UserRole,
+} from "@/lib/user";
 import type { WorkspaceColor } from "@/lib/workspace";
 import { requireWorkspaceAccess } from "@/lib/workspace-access";
 import { cn } from "@/lib/cn";
@@ -10,37 +17,12 @@ import AddEmployeeButton from "./_components/add-employee-button";
 import EditEmployeeButton from "./_components/edit-employee-button";
 import RemoveEmployeeButton from "./_components/remove-employee-button";
 
-const HR_PAGE_ROLES: UserRole[] = ["owner", "admin", "hr"];
-
 export const metadata: Metadata = {
   title: "Employees — WSS CRM",
 };
 
 type EmployeesPageProps = {
   params: Promise<{ workspaceId: string }>;
-};
-
-const roleLabel: Record<UserRole, string> = {
-  owner: "Owner",
-  admin: "Admin",
-  sales_manager: "Sales Manager",
-  sales_executive: "Sales Executive",
-  accounts: "Accounts",
-  hr: "HR",
-};
-
-const roleStyle: Record<UserRole, string> = {
-  owner:
-    "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 dark:bg-primary/15 dark:ring-primary/25",
-  admin:
-    "bg-zinc-900/10 text-zinc-900 ring-1 ring-inset ring-zinc-900/15 dark:bg-zinc-100/10 dark:text-zinc-100 dark:ring-zinc-100/15",
-  sales_manager:
-    "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/25",
-  sales_executive:
-    "bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/25",
-  accounts:
-    "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/25",
-  hr: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/25",
 };
 
 function formatJoined(date: Date) {
@@ -60,7 +42,7 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
     role: myRole,
   } = await requireWorkspaceAccess({
     workspaceId,
-    allowedRoles: HR_PAGE_ROLES,
+    allowedRoles: EMPLOYEE_MANAGER_ROLES,
   });
 
   const memberUserIds = (doc.members ?? []).map((m) => m.user);
@@ -104,7 +86,7 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  const canManage = HR_PAGE_ROLES.includes(myRole);
+  const canManage = canManageEmployees(myRole);
 
   const workspace = {
     id: String(doc._id),
@@ -192,10 +174,10 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
               <span
                 className={cn(
                   "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                  roleStyle.owner,
+                  ROLE_BADGE_CLASS.owner,
                 )}
               >
-                {roleLabel.owner}
+                {ROLE_LABEL.owner}
               </span>
             </div>
           </div>
@@ -265,10 +247,10 @@ export default async function EmployeesPage({ params }: EmployeesPageProps) {
                     <span
                       className={cn(
                         "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                        roleStyle[emp.role],
+                        ROLE_BADGE_CLASS[emp.role],
                       )}
                     >
-                      {roleLabel[emp.role]}
+                      {ROLE_LABEL[emp.role]}
                     </span>
 
                     <span className="hidden shrink-0 text-[11px] tabular-nums text-zinc-400 sm:inline dark:text-zinc-500">

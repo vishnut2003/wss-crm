@@ -36,6 +36,22 @@ export type RequireWorkspaceAccessOptions = {
   allowedRoles?: UserRole[];
 };
 
+type WorkspaceLike = {
+  owner: unknown;
+  members?: ReadonlyArray<{ user: unknown; role: string }>;
+};
+
+export function getActorRole(
+  workspace: WorkspaceLike,
+  userId: string,
+): UserRole {
+  if (String(workspace.owner) === userId) return "owner";
+  const membership = workspace.members?.find(
+    (m) => String(m.user) === userId,
+  );
+  return (membership?.role as UserRole | undefined) ?? "sales_executive";
+}
+
 export async function requireWorkspaceAccess({
   workspaceId,
   allowedRoles,
@@ -55,12 +71,7 @@ export async function requireWorkspaceAccess({
 
   if (!workspace) notFound();
 
-  const userId = session.user.id;
-  const isOwner = String(workspace.owner) === userId;
-  const membership = workspace.members?.find((m) => String(m.user) === userId);
-  const role: UserRole = isOwner
-    ? "owner"
-    : (membership?.role ?? "sales_executive");
+  const role = getActorRole(workspace, session.user.id);
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     notFound();

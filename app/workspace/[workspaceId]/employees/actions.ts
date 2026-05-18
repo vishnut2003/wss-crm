@@ -7,7 +7,8 @@ import { auth } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import User, { USER_ROLES, type UserRole } from "@/models/user";
 import Workspace from "@/models/workspace";
-import { assignableRolesFor } from "@/lib/user";
+import { assignableRolesFor, canManageEmployees } from "@/lib/user";
+import { getActorRole } from "@/lib/workspace-access";
 
 export type AddEmployeeState =
   | {
@@ -73,16 +74,8 @@ export async function addEmployee(
   const workspace = await Workspace.findById(workspaceId);
   if (!workspace) return { formError: "Workspace not found." };
 
-  const isOwner = String(workspace.owner) === session.user.id;
-  const actorMembership = workspace.members?.find(
-    (m) => String(m.user) === session.user!.id,
-  );
-  const actorRole: UserRole = isOwner
-    ? "owner"
-    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
-  const canManage =
-    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
-  if (!canManage) {
+  const actorRole = getActorRole(workspace, session.user.id);
+  if (!canManageEmployees(actorRole)) {
     return { formError: "You don't have permission to add employees." };
   }
 
@@ -188,16 +181,8 @@ export async function updateEmployee(
   const workspace = await Workspace.findById(workspaceId);
   if (!workspace) return { formError: "Workspace not found." };
 
-  const isOwner = String(workspace.owner) === session.user.id;
-  const actorMembership = workspace.members?.find(
-    (m) => String(m.user) === session.user!.id,
-  );
-  const actorRole: UserRole = isOwner
-    ? "owner"
-    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
-  const canManage =
-    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
-  if (!canManage) {
+  const actorRole = getActorRole(workspace, session.user.id);
+  if (!canManageEmployees(actorRole)) {
     return { formError: "You don't have permission to edit employees." };
   }
 
@@ -283,16 +268,8 @@ export async function removeEmployee(
   const workspace = await Workspace.findById(workspaceId);
   if (!workspace) return { formError: "Workspace not found." };
 
-  const isOwner = String(workspace.owner) === session.user.id;
-  const actorMembership = workspace.members?.find(
-    (m) => String(m.user) === session.user!.id,
-  );
-  const actorRole: UserRole = isOwner
-    ? "owner"
-    : ((actorMembership?.role as UserRole | undefined) ?? "sales_executive");
-  const canManage =
-    actorRole === "owner" || actorRole === "admin" || actorRole === "hr";
-  if (!canManage) {
+  const actorRole = getActorRole(workspace, session.user.id);
+  if (!canManageEmployees(actorRole)) {
     return { formError: "You don't have permission to remove employees." };
   }
 

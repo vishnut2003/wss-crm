@@ -1,17 +1,15 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
-import {
-  WORKSPACE_COLORS,
-  WORKSPACE_MEMBER_ROLES,
-} from "@/lib/workspace";
+import { WORKSPACE_COLORS } from "@/lib/workspace";
+import { USER_ROLES } from "@/models/user";
 
 const memberSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     role: {
       type: String,
-      enum: WORKSPACE_MEMBER_ROLES,
+      enum: USER_ROLES,
       required: true,
-      default: "member",
+      default: "sales_executive",
     },
   },
   { _id: false },

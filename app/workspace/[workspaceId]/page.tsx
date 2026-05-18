@@ -12,7 +12,8 @@ import {
 import { auth } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
-import type { WorkspaceColor, WorkspaceMemberRole } from "@/lib/workspace";
+import type { WorkspaceColor } from "@/lib/workspace";
+import type { UserRole } from "@/models/user";
 import DashboardLayout from "@/layouts/dashboard-layout";
 
 export const metadata: Metadata = {
@@ -123,9 +124,9 @@ export default async function WorkspaceDetailPage({
   const membership = doc.members?.find(
     (m) => String(m.user) === session.user.id,
   );
-  const role: WorkspaceMemberRole = isOwner
+  const role: UserRole = isOwner
     ? "owner"
-    : (membership?.role ?? "member");
+    : (membership?.role ?? "sales_executive");
 
   const workspace = {
     id: String(doc._id),

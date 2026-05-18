@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/time";
-import type { WorkspaceColor, WorkspaceMemberRole } from "@/lib/workspace";
+import type { WorkspaceColor } from "@/lib/workspace";
+import type { UserRole } from "@/models/user";
 
 const swatch: Record<WorkspaceColor, string> = {
   violet: "bg-gradient-to-br from-violet-500 to-purple-700",
@@ -36,23 +37,29 @@ export type WorkspaceCardData = {
   name: string;
   color: WorkspaceColor;
   memberCount: number;
-  role: WorkspaceMemberRole;
+  role: UserRole;
   updatedAt: string;
 };
 
-const roleLabel: Record<WorkspaceMemberRole, string> = {
+const roleLabel: Record<UserRole, string> = {
   owner: "Owner",
   admin: "Admin",
-  member: "Member",
+  sales_manager: "Sales Manager",
+  sales_executive: "Sales Executive",
+  accounts: "Accounts",
 };
 
-const roleStyle: Record<WorkspaceMemberRole, string> = {
+const roleStyle: Record<UserRole, string> = {
   owner:
     "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 dark:bg-primary/15 dark:ring-primary/25",
   admin:
     "bg-zinc-900/10 text-zinc-900 ring-1 ring-inset ring-zinc-900/15 dark:bg-zinc-100/10 dark:text-zinc-100 dark:ring-zinc-100/15",
-  member:
-    "bg-zinc-100 text-zinc-600 ring-1 ring-inset ring-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:ring-zinc-700",
+  sales_manager:
+    "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/25",
+  sales_executive:
+    "bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/25",
+  accounts:
+    "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/25",
 };
 
 export default function WorkspaceCard({

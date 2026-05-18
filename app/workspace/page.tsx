@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
-import type { WorkspaceColor, WorkspaceMemberRole } from "@/lib/workspace";
+import type { WorkspaceColor } from "@/lib/workspace";
+import type { UserRole } from "@/models/user";
 import { LogOut } from "lucide-react";
 import WorkspaceCard, {
   type WorkspaceCardData,
@@ -25,9 +26,9 @@ async function getWorkspaces(userId: string): Promise<WorkspaceCardData[]> {
   return docs.map((w) => {
     const isOwner = String(w.owner) === userId;
     const membership = w.members?.find((m) => String(m.user) === userId);
-    const role: WorkspaceMemberRole = isOwner
+    const role: UserRole = isOwner
       ? "owner"
-      : (membership?.role ?? "member");
+      : (membership?.role ?? "sales_executive");
 
     return {
       id: String(w._id),

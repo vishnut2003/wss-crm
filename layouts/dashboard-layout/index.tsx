@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { WorkspaceColor, WorkspaceMemberRole } from "@/lib/workspace";
+import type { WorkspaceColor } from "@/lib/workspace";
+import type { UserRole } from "@/models/user";
 import Header from "./header";
 import Sidebar from "./sidebar";
 
@@ -13,7 +14,7 @@ type DashboardLayoutProps = {
     id: string;
     name: string;
     color: WorkspaceColor;
-    role: WorkspaceMemberRole;
+    role: UserRole;
   };
   children: ReactNode;
 };

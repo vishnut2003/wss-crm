@@ -1,24 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
 import { Menu, Search, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import NavList from "./nav-list";
 
+const subscribe = () => () => {};
+
 export default function MobileSidebar({ workspaceId }: { workspaceId: string }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!open) return;

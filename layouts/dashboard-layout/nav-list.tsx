@@ -11,11 +11,13 @@ export default function NavList({
   role,
   query = "",
   onNavigate,
+  compact = false,
 }: {
   workspaceId: string;
   role: UserRole;
   query?: string;
   onNavigate?: () => void;
+  compact?: boolean;
 }) {
   const pathname = usePathname();
   const base = `/workspace/${workspaceId}`;
@@ -50,14 +52,18 @@ export default function NavList({
         href={href}
         onClick={onNavigate}
         aria-current={isActive ? "page" : undefined}
+        title={compact ? item.label : undefined}
         className={cn(
-          "group relative flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-all",
+          "group relative flex items-center rounded-lg transition-all",
+          compact
+            ? "justify-center px-1.5 py-1.5"
+            : "gap-2.5 px-2 py-1.5",
           isActive
             ? "bg-gradient-to-r from-primary/[0.08] via-primary/[0.03] to-transparent dark:from-primary/[0.14] dark:via-primary/[0.05]"
             : "hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40",
         )}
       >
-        {isActive ? (
+        {isActive && !compact ? (
           <span
             aria-hidden
             className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-gradient-to-b from-primary to-secondary"
@@ -82,29 +88,40 @@ export default function NavList({
           </span>
         )}
 
-        <span
-          className={cn(
-            "flex-1 truncate text-[13px] transition-colors",
-            isActive
-              ? "font-semibold text-zinc-900 dark:text-white"
-              : "font-medium text-zinc-600 group-hover:text-zinc-900 dark:text-zinc-400 dark:group-hover:text-white",
-          )}
-        >
-          {item.label}
-        </span>
+        {compact ? (
+          item.badge ? (
+            <span
+              aria-hidden
+              className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_0_2px_rgba(255,255,255,0.9)] dark:shadow-[0_0_0_2px_rgb(24_24_27)]"
+            />
+          ) : null
+        ) : (
+          <>
+            <span
+              className={cn(
+                "flex-1 truncate text-[13px] transition-colors",
+                isActive
+                  ? "font-semibold text-zinc-900 dark:text-white"
+                  : "font-medium text-zinc-600 group-hover:text-zinc-900 dark:text-zinc-400 dark:group-hover:text-white",
+              )}
+            >
+              {item.label}
+            </span>
 
-        {item.badge ? (
-          <span
-            className={cn(
-              "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-all",
-              isActive
-                ? "bg-white text-primary shadow-sm ring-1 ring-primary/15 dark:bg-zinc-900 dark:ring-primary/25"
-                : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:group-hover:bg-zinc-700",
-            )}
-          >
-            {item.badge}
-          </span>
-        ) : null}
+            {item.badge ? (
+              <span
+                className={cn(
+                  "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-all",
+                  isActive
+                    ? "bg-white text-primary shadow-sm ring-1 ring-primary/15 dark:bg-zinc-900 dark:ring-primary/25"
+                    : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:group-hover:bg-zinc-700",
+                )}
+              >
+                {item.badge}
+              </span>
+            ) : null}
+          </>
+        )}
       </Link>
     );
   };
@@ -122,11 +139,18 @@ export default function NavList({
       {filteredSections.map((section, index) => (
         <div key={section.heading}>
           {index > 0 ? (
-            <div className="my-3 h-px bg-zinc-100 dark:bg-zinc-800" />
+            <div
+              className={cn(
+                "h-px bg-zinc-100 dark:bg-zinc-800",
+                compact ? "mx-2 my-2" : "my-3",
+              )}
+            />
           ) : null}
-          <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">
-            {section.heading}
-          </p>
+          {compact ? null : (
+            <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">
+              {section.heading}
+            </p>
+          )}
           <nav className="space-y-0.5">{section.items.map(renderItem)}</nav>
         </div>
       ))}

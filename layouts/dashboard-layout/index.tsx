@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { WorkspaceColor } from "@/lib/workspace";
 import type { UserRole } from "@/lib/user";
+import { cn } from "@/lib/cn";
 import Header from "./header";
 import Sidebar from "./sidebar";
 
@@ -16,20 +17,42 @@ type DashboardLayoutProps = {
     color: WorkspaceColor;
     role: UserRole;
   };
+  compactSidebar?: boolean;
+  fullBleed?: boolean;
   children: ReactNode;
 };
 
 export default function DashboardLayout({
   user,
   workspace,
+  compactSidebar = false,
+  fullBleed = false,
   children,
 }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div
+      className={cn(
+        "flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100",
+        fullBleed
+          ? "fixed inset-0 h-screen w-screen overflow-hidden"
+          : "min-h-screen flex-1",
+      )}
+    >
       <Header user={user} workspace={workspace} />
-      <div className="flex flex-1">
-        <Sidebar workspaceId={workspace.id} role={workspace.role} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      <div className={cn("flex flex-1", fullBleed && "min-h-0")}>
+        <Sidebar
+          workspaceId={workspace.id}
+          role={workspace.role}
+          compact={compactSidebar}
+        />
+        <main
+          className={cn(
+            "flex flex-1 flex-col",
+            fullBleed ? "min-h-0 min-w-0" : "px-4 py-6 sm:px-6 lg:px-8",
+          )}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/leads", label: "Leads & Prospects", icon: UserPlus },
       { href: "/customers", label: "Customers", icon: Users },
-      { href: "/proposals", label: "Proposals", icon: FileText },
+      { href: "/proposals", label: "AI Proposals", icon: FileText },
       { href: "/quotations", label: "Quotations", icon: FileSpreadsheet },
     ],
     restrictedTo: ["owner", "admin", "sales_manager", "sales_executive"],

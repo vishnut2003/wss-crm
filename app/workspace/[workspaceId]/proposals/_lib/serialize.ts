@@ -1,5 +1,6 @@
 import type mongoose from "mongoose";
 import type { ProposalDocument } from "@/lib/proposal-ai";
+import { stripMarkdown } from "./preview";
 
 export type ChatRole = "user" | "assistant";
 
@@ -42,7 +43,7 @@ export function serializeChat(doc: ChatDocLike): SerializedProposalChat {
     id: String(doc._id),
     workspaceId: String(doc.workspace),
     title: doc.title,
-    preview: doc.lastMessagePreview ?? "",
+    preview: stripMarkdown(doc.lastMessagePreview ?? ""),
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     messages: doc.messages.map((m, idx) => ({

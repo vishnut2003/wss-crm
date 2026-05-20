@@ -20,6 +20,7 @@ import {
   type SerializedProposalChat,
   type SerializedProposalMessage,
 } from "./_lib/serialize";
+import { stripMarkdown } from "./_lib/preview";
 
 const ALLOWED_ROLES: ReadonlyArray<UserRole> = [
   "owner",
@@ -39,7 +40,7 @@ function buildTitleFromText(text: string): string {
 }
 
 function buildPreview(text: string): string {
-  const trimmed = text.trim().replace(/\s+/g, " ");
+  const trimmed = stripMarkdown(text);
   return trimmed.length > 200 ? `${trimmed.slice(0, 200)}…` : trimmed;
 }
 

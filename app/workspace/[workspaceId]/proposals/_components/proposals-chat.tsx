@@ -14,6 +14,7 @@ import {
   ArrowUp,
   FileText,
   MessageSquarePlus,
+  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   Search,
@@ -119,6 +120,7 @@ export default function ProposalsChat({
   const [pdfWidth, setPdfWidth] = useState(40);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
   const [isRailExpanded, setIsRailExpanded] = useState(false);
+  const [isRailOpen, setIsRailOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -218,6 +220,12 @@ export default function ProposalsChat({
     setActiveId(null);
     setInput("");
     setErrorMessage(null);
+    setIsRailOpen(false);
+  }
+
+  function selectChat(id: string) {
+    setActiveId(id);
+    setIsRailOpen(false);
   }
 
   function handleDelete(id: string) {
@@ -337,11 +345,23 @@ export default function ProposalsChat({
       <div className="hidden w-14 shrink-0 md:block" aria-hidden />
 
       {/* Conversations sidebar — absolute overlay so expanding doesn't resize chat */}
+      {/* Mobile backdrop when the rail is opened via the header toggle */}
+      {isRailOpen ? (
+        <div
+          onClick={() => setIsRailOpen(false)}
+          aria-hidden
+          className="absolute inset-0 z-10 bg-zinc-900/40 backdrop-blur-[1px] md:hidden"
+        />
+      ) : null}
+
       <aside
-        data-expanded={isRailExpanded ? "" : undefined}
+        data-expanded={isRailExpanded || isRailOpen ? "" : undefined}
         onMouseEnter={handleRailEnter}
         onMouseLeave={handleRailLeave}
-        className="group/rail absolute left-0 top-0 z-20 hidden h-full w-14 flex-col overflow-hidden border-r border-zinc-100/80 bg-zinc-50/80 backdrop-blur-sm transition-[width,box-shadow] duration-200 ease-out data-[expanded]:w-72 data-[expanded]:shadow-xl data-[expanded]:shadow-zinc-900/5 md:flex dark:border-zinc-800/70 dark:bg-zinc-950/80 dark:data-[expanded]:shadow-black/30"
+        className={cn(
+          "group/rail absolute left-0 top-0 z-20 h-full w-14 flex-col overflow-hidden border-r border-zinc-100/80 bg-zinc-50/80 backdrop-blur-sm transition-[width,box-shadow] duration-200 ease-out data-[expanded]:w-72 data-[expanded]:shadow-xl data-[expanded]:shadow-zinc-900/5 dark:border-zinc-800/70 dark:bg-zinc-950/80 dark:data-[expanded]:shadow-black/30",
+          isRailOpen ? "flex" : "hidden md:flex",
+        )}
       >
         <div className="space-y-2 px-2 pb-2 pt-3 group-data-[expanded]/rail:px-3">
           <button
@@ -387,7 +407,7 @@ export default function ProposalsChat({
                   <li key={convo.id}>
                     <button
                       type="button"
-                      onClick={() => setActiveId(convo.id)}
+                      onClick={() => selectChat(convo.id)}
                       title={convo.title}
                       className={cn(
                         "group/item relative flex w-full items-center justify-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors group-data-[expanded]/rail:items-center group-data-[expanded]/rail:justify-start group-data-[expanded]/rail:gap-2.5 group-data-[expanded]/rail:px-2.5",
@@ -454,24 +474,26 @@ export default function ProposalsChat({
 
       {/* Main chat */}
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100/80 px-6 py-4 dark:border-zinc-800/70">
-          <div className="min-w-0">
-            <p className="truncate text-[14.5px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
-              {active?.title ?? "New conversation"}
-            </p>
-            <p className="mt-0.5 line-clamp-1 text-[11.5px] text-zinc-500 dark:text-zinc-400">
-              {workspaceName}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100/80 px-4 py-4 sm:px-6 dark:border-zinc-800/70">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
-              onClick={startNewChat}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white md:hidden"
+              onClick={() => setIsRailOpen(true)}
+              aria-label="Show conversations"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             >
-              <MessageSquarePlus className="h-3.5 w-3.5" />
-              New
+              <PanelLeftOpen className="h-4 w-4" />
             </button>
+            <div className="min-w-0">
+              <p className="truncate text-[14.5px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
+                {active?.title ?? "New conversation"}
+              </p>
+              <p className="mt-0.5 line-clamp-1 text-[11.5px] text-zinc-500 dark:text-zinc-400">
+                {workspaceName}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setIsPdfOpen(true)}

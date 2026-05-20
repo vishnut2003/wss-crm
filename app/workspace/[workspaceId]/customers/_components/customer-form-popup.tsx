@@ -200,7 +200,7 @@ export default function CustomerFormPopup({
       formRef.current?.reset();
     }
     prevOpenRef.current = open;
-  });
+  }, [open, defaults]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) formRef.current?.reset();

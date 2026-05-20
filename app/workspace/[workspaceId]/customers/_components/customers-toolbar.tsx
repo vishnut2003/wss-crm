@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import {
@@ -39,7 +39,11 @@ export default function CustomersToolbar({
   const assignee = params.get("assignee") ?? "all";
 
   const [localQ, setLocalQ] = useState(q);
-  useEffect(() => setLocalQ(q), [q]);
+  const [lastSyncedQ, setLastSyncedQ] = useState(q);
+  if (q !== lastSyncedQ) {
+    setLastSyncedQ(q);
+    setLocalQ(q);
+  }
 
   const navigate = (next: URLSearchParams) => {
     const qs = next.toString();

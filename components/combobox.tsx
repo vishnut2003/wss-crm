@@ -56,6 +56,7 @@ export default function Combobox<T extends string>({
   contentClassName,
 }: ComboboxProps<T>) {
   const [open, setOpen] = React.useState(false);
+  const listboxId = React.useId();
 
   const selected = React.useMemo(
     () => options.find((o) => o.value === value),
@@ -70,6 +71,7 @@ export default function Combobox<T extends string>({
           type="button"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
           aria-invalid={invalid ? true : undefined}
           disabled={disabled}
           className={cn(
@@ -87,6 +89,7 @@ export default function Combobox<T extends string>({
         </button>
       </PopoverTrigger>
       <PopoverContent
+        id={listboxId}
         className={cn("w-[var(--radix-popover-trigger-width)] p-0", contentClassName)}
         align="start"
       >

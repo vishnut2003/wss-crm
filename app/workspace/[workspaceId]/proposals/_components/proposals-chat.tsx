@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -12,7 +13,6 @@ import {
 import {
   ArrowUp,
   FileText,
-  FileUp,
   MessageSquarePlus,
   PanelRightClose,
   PanelRightOpen,
@@ -21,26 +21,36 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import type { ProposalDocument } from "@/lib/proposal-ai";
+import {
+  deleteProposalChat,
+  sendProposalMessage,
+} from "../actions";
+import ProposalPdfViewer from "./proposal-pdf-viewer";
 
 export type ChatRole = "user" | "assistant";
 
-export type ChatMessage = {
+export type SerializedProposalMessage = {
   id: string;
   role: ChatRole;
-  body: string;
+  content: string;
+  proposal: ProposalDocument | null;
+  createdAt: string;
 };
 
-export type ProposalConversation = {
+export type SerializedProposalChat = {
   id: string;
+  workspaceId: string;
   title: string;
   preview: string;
   updatedAt: string;
-  messages: ChatMessage[];
+  createdAt: string;
+  messages: SerializedProposalMessage[];
 };
 
 type ProposalsChatProps = {
-  conversations: ProposalConversation[];
-  userName: string;
+  workspaceId: string;
+  conversations: SerializedProposalChat[];
   userImage: string | null;
   userInitial: string;
   workspaceName: string;
@@ -53,24 +63,48 @@ const suggestionPrompts = [
   "Outline a discovery-to-launch timeline",
 ];
 
-function makeId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+function makeLocalId() {
+  return `local-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
 }
 
-function assistantReplyFor(prompt: string): string {
-  const trimmed = prompt.trim();
-  if (!trimmed) return "Could you share a few more details about the proposal?";
-  return `Here's a starting draft for "${trimmed}":\n\n1. Executive summary — frame the client's goal and our approach\n2. Scope of work — concrete deliverables, dependencies, and out-of-scope items\n3. Timeline & milestones — weekly cadence with review gates\n4. Investment — pricing, payment terms, and any add-ons\n5. Next steps — sign-off, kickoff date, and stakeholders\n\nTell me which section to expand and I'll go deeper.`;
+function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffMs = Date.now() - then;
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function latestProposalIn(
+  chat: SerializedProposalChat | null,
+): ProposalDocument | null {
+  if (!chat) return null;
+  for (let i = chat.messages.length - 1; i >= 0; i--) {
+    const m = chat.messages[i];
+    if (m.role === "assistant" && m.proposal) return m.proposal;
+  }
+  return null;
 }
 
 export default function ProposalsChat({
+  workspaceId,
   conversations: initialConversations,
-  userName,
   userImage,
   userInitial,
   workspaceName,
 }: ProposalsChatProps) {
-  const [conversations, setConversations] = useState<ProposalConversation[]>(
+  const [conversations, setConversations] = useState<SerializedProposalChat[]>(
     initialConversations,
   );
   const [activeId, setActiveId] = useState<string | null>(
@@ -79,8 +113,10 @@ export default function ProposalsChat({
   const [query, setQuery] = useState("");
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pdfWidth, setPdfWidth] = useState(40);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -91,6 +127,8 @@ export default function ProposalsChat({
     () => conversations.find((c) => c.id === activeId) ?? null,
     [conversations, activeId],
   );
+
+  const activeProposal = useMemo(() => latestProposalIn(active), [active]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -146,109 +184,106 @@ export default function ProposalsChat({
   }
 
   function startNewChat() {
-    const id = makeId();
-    const fresh: ProposalConversation = {
-      id,
-      title: "New proposal",
-      preview: "Tell the assistant what you'd like to draft.",
-      updatedAt: "Just now",
-      messages: [
-        {
-          id: makeId(),
-          role: "assistant",
-          body: `Hi ${userName.split(" ")[0] ?? ""}! I can help you draft a proposal for ${workspaceName}. What client and engagement type are we working with?`,
-        },
-      ],
-    };
-    setConversations((prev) => [fresh, ...prev]);
-    setActiveId(id);
+    // Don't hit the DB until the user actually sends something.
+    setActiveId(null);
     setInput("");
+    setErrorMessage(null);
   }
 
-  function deleteConversation(id: string) {
-    setConversations((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      if (id === activeId) {
-        setActiveId(next[0]?.id ?? null);
+  function handleDelete(id: string) {
+    const previous = conversations;
+    setConversations((prev) => prev.filter((c) => c.id !== id));
+    if (id === activeId) {
+      const next = previous.filter((c) => c.id !== id)[0]?.id ?? null;
+      setActiveId(next);
+    }
+    startTransition(async () => {
+      const result = await deleteProposalChat(workspaceId, id);
+      if (!result.ok) {
+        setErrorMessage(result.error);
+        setConversations(previous);
       }
-      return next;
     });
   }
 
-  function sendMessage(rawText: string) {
+  async function sendMessage(rawText: string) {
     const text = rawText.trim();
-    if (!text) return;
+    if (!text || isThinking) return;
 
-    let convoId = activeId;
-    let userTitle: string | null = null;
+    setErrorMessage(null);
+    setInput("");
+    setIsThinking(true);
+
+    // Optimistic update — if no active chat, create a placeholder so the user
+    // sees their message immediately. The server response will replace it.
+    const optimisticUserMsg: SerializedProposalMessage = {
+      id: makeLocalId(),
+      role: "user",
+      content: text,
+      proposal: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    const previousActiveId = activeId;
+    let optimisticChatId = activeId;
+    let snapshot: SerializedProposalChat[] = conversations;
 
     setConversations((prev) => {
-      let list = prev;
-      if (!convoId) {
-        convoId = makeId();
-        userTitle = text.length > 48 ? `${text.slice(0, 48)}…` : text;
-        const fresh: ProposalConversation = {
-          id: convoId,
-          title: userTitle,
+      snapshot = prev;
+      if (!previousActiveId) {
+        // brand-new chat placeholder until server returns the real id
+        const tempId = makeLocalId();
+        optimisticChatId = tempId;
+        const placeholder: SerializedProposalChat = {
+          id: tempId,
+          workspaceId,
+          title: text.length > 60 ? `${text.slice(0, 60)}…` : text,
           preview: text,
-          updatedAt: "Just now",
-          messages: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          messages: [optimisticUserMsg],
         };
-        list = [fresh, ...prev];
+        return [placeholder, ...prev];
       }
-      const userMsg: ChatMessage = {
-        id: makeId(),
-        role: "user",
-        body: text,
-      };
-      return list.map((c) =>
-        c.id === convoId
+      return prev.map((c) =>
+        c.id === previousActiveId
           ? {
               ...c,
-              title:
-                c.title === "New proposal"
-                  ? text.length > 48
-                    ? `${text.slice(0, 48)}…`
-                    : text
-                  : c.title,
               preview: text,
-              updatedAt: "Just now",
-              messages: [...c.messages, userMsg],
+              updatedAt: new Date().toISOString(),
+              messages: [...c.messages, optimisticUserMsg],
             }
           : c,
       );
     });
 
-    if (!activeId && convoId) {
-      setActiveId(convoId);
+    if (!previousActiveId) setActiveId(optimisticChatId);
+
+    const result = await sendProposalMessage(
+      workspaceId,
+      previousActiveId,
+      text,
+    );
+
+    setIsThinking(false);
+
+    if (!result.ok) {
+      setErrorMessage(result.error);
+      // Roll back the optimistic message so the user can retry without dupes.
+      setConversations(snapshot);
+      if (!previousActiveId) setActiveId(snapshot[0]?.id ?? null);
+      setInput(text);
+      return;
     }
 
-    setInput("");
-    setIsThinking(true);
-
-    window.setTimeout(() => {
-      const replyId = makeId();
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === convoId
-            ? {
-                ...c,
-                preview: text,
-                updatedAt: "Just now",
-                messages: [
-                  ...c.messages,
-                  {
-                    id: replyId,
-                    role: "assistant",
-                    body: assistantReplyFor(text),
-                  },
-                ],
-              }
-            : c,
-        ),
+    // Replace the optimistic chat with the authoritative server chat.
+    setConversations((prev) => {
+      const without = prev.filter(
+        (c) => c.id !== optimisticChatId && c.id !== result.chat.id,
       );
-      setIsThinking(false);
-    }, 700);
+      return [result.chat, ...without];
+    });
+    setActiveId(result.chat.id);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -342,7 +377,7 @@ export default function ProposalsChat({
                       </span>
                       <span className="ml-auto hidden shrink-0 flex-col items-end gap-1 group-hover/rail:flex">
                         <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                          {convo.updatedAt}
+                          {formatRelative(convo.updatedAt)}
                         </span>
                         <span
                           role="button"
@@ -350,13 +385,13 @@ export default function ProposalsChat({
                           aria-label={`Delete ${convo.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteConversation(convo.id);
+                            handleDelete(convo.id);
                           }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
                               e.stopPropagation();
-                              deleteConversation(convo.id);
+                              handleDelete(convo.id);
                             }
                           }}
                           className="grid h-5 w-5 cursor-pointer place-items-center rounded text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-rose-500 group-hover/item:opacity-100 dark:hover:bg-zinc-800"
@@ -373,7 +408,7 @@ export default function ProposalsChat({
         </div>
 
         <div className="hidden border-t border-zinc-100 px-3 py-2.5 text-[10.5px] text-zinc-400 group-hover/rail:block dark:border-zinc-800 dark:text-zinc-500">
-          UI preview · no answers persisted
+          Chats sync to your workspace
         </div>
       </aside>
 
@@ -388,7 +423,7 @@ export default function ProposalsChat({
               <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
                 {active?.title ?? "Start a new conversation"}
               </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
+              <p className="line-clamp-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                 Drafting assistant for {workspaceName}
               </p>
             </div>
@@ -439,6 +474,12 @@ export default function ProposalsChat({
           )}
         </div>
 
+        {errorMessage ? (
+          <div className="border-t border-rose-200 bg-rose-50 px-4 py-2 text-[12px] text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <form
           onSubmit={handleSubmit}
           className="border-t border-zinc-100 px-3 pb-3 pt-3 dark:border-zinc-800 sm:px-6"
@@ -464,7 +505,7 @@ export default function ProposalsChat({
               </button>
             </div>
             <p className="mt-1.5 px-1 text-[10.5px] text-zinc-400 dark:text-zinc-500">
-              Press Enter to send · Shift + Enter for newline
+              Press Enter to send · Shift + Enter for newline · Ask &ldquo;generate the proposal PDF&rdquo; when ready
             </p>
           </div>
         </form>
@@ -484,14 +525,11 @@ export default function ProposalsChat({
         style={{ ["--pdf-w" as string]: `${pdfWidth}%` }}
         className={cn(
           "shrink-0 flex-col border-l border-zinc-100 bg-zinc-50/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95",
-          // Below lg: drawer-style overlay
           "absolute inset-y-0 right-0 z-40 w-full max-w-md shadow-2xl shadow-black/30",
           isPdfOpen ? "flex" : "hidden",
-          // lg+: inline column, resizable width (percentage of chat container)
           "lg:relative lg:flex lg:max-w-none lg:shadow-none lg:w-[var(--pdf-w)]",
         )}
       >
-        {/* Drag handle — only meaningful in inline mode */}
         <div
           role="separator"
           aria-orientation="vertical"
@@ -509,44 +547,27 @@ export default function ProposalsChat({
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
+        {/* Outer header — only shown in the mobile drawer so the close button stays reachable. */}
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 lg:hidden dark:border-zinc-800">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
               <FileText className="h-3.5 w-3.5" />
             </span>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                Proposal PDF
-              </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Preview & export
-              </p>
-            </div>
+            <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
+              Proposal PDF
+            </p>
           </div>
           <button
             type="button"
             onClick={() => setIsPdfOpen(false)}
             aria-label="Close PDF panel"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 lg:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <PanelRightClose className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 py-8">
-          <div className="flex w-full max-w-xs flex-col items-center rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-              <FileUp className="h-5 w-5" />
-            </span>
-            <p className="mt-3 text-[12.5px] font-medium text-zinc-700 dark:text-zinc-200">
-              No PDF loaded yet
-            </p>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Generated proposal PDFs will appear here for preview and
-              download.
-            </p>
-          </div>
-        </div>
+        <ProposalPdfViewer proposal={activeProposal} />
       </aside>
     </div>
   );
@@ -557,7 +578,7 @@ function MessageRow({
   userInitial,
   userImage,
 }: {
-  message: ChatMessage;
+  message: SerializedProposalMessage;
   userInitial: string;
   userImage: string | null;
 }) {
@@ -601,7 +622,13 @@ function MessageRow({
             : "rounded-tl-sm border border-zinc-100 bg-zinc-50 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100",
         )}
       >
-        {message.body}
+        {message.content}
+        {message.proposal ? (
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white/95 ring-1 ring-white/20 backdrop-blur dark:bg-zinc-900/40 dark:text-zinc-100">
+            <FileText className="h-3 w-3" />
+            PDF rendered — see preview on the right
+          </div>
+        ) : null}
       </div>
     </li>
   );
@@ -648,9 +675,9 @@ function EmptyState({
         Draft a proposal for {workspaceName}
       </h2>
       <p className="mt-1.5 max-w-md text-[12.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-        Describe the client, scope, and budget. The assistant will outline an
-        executive summary, deliverables, timeline, and pricing you can iterate
-        on.
+        Describe the client, scope, and budget. When you&rsquo;re ready, ask the
+        assistant to <em>generate the proposal PDF</em> and it&rsquo;ll render
+        in the panel on the right.
       </p>
 
       <div className="mt-6 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">

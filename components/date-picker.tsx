@@ -42,7 +42,6 @@ export default function DatePicker({
           id={id}
           type="button"
           disabled={disabled}
-          aria-invalid={invalid ? true : undefined}
           className={cn(
             "flex h-10 w-full items-center justify-between rounded-md border border-zinc-200 bg-white px-3 text-left text-sm text-zinc-900 transition-colors hover:border-zinc-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-zinc-700",
             !value && "text-zinc-400 dark:text-zinc-500",

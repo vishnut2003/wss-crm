@@ -167,7 +167,7 @@ export default function ProjectsToolbar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All teams</SelectItem>
-              <SelectItem value="me">I'm on the team</SelectItem>
+              <SelectItem value="me">I&apos;m on the team</SelectItem>
               <SelectItem value="unassigned">No team</SelectItem>
               {members
                 .filter((m) => m.id !== currentUserId)

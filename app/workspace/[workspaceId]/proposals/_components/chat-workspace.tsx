@@ -181,8 +181,10 @@ export default function ChatWorkspace({
   useEffect(() => {
     if (!mention) return;
     const seq = ++mentionSearchSeq.current;
-    setMentionLoading(true);
     const timer = window.setTimeout(async () => {
+      // Loading flag flips inside the async callback (not the effect body)
+      // so we don't trigger a synchronous render right when the effect runs.
+      setMentionLoading(true);
       const res = await searchMentionables(workspaceId, mention.query);
       if (seq !== mentionSearchSeq.current) return;
       setMentionLoading(false);

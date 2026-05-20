@@ -30,16 +30,46 @@ type Props = {
   onSelect: (recipient: RecipientResult) => void;
 };
 
+// Outer shell — only owns the popup open/close. The body is conditionally
+// rendered so it mounts fresh on each open, which means we don't need a
+// "reset on open" effect (state lives inside the body and re-initialises
+// via useState every mount).
 export default function RecipientPicker({
   open,
   workspaceId,
   onOpenChange,
   onSelect,
 }: Props) {
+  return (
+    <Popup
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-h-[80vh] overflow-hidden sm:max-w-xl"
+    >
+      {open ? (
+        <PickerBody
+          workspaceId={workspaceId}
+          onSelect={onSelect}
+          onClose={() => onOpenChange(false)}
+        />
+      ) : null}
+    </Popup>
+  );
+}
+
+function PickerBody({
+  workspaceId,
+  onSelect,
+  onClose,
+}: {
+  workspaceId: string;
+  onSelect: (recipient: RecipientResult) => void;
+  onClose: () => void;
+}) {
   const [tab, setTab] = useState<Tab>("existing");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RecipientResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
   // Custom recipient form state.
   const [customName, setCustomName] = useState("");
@@ -47,31 +77,11 @@ export default function RecipientPicker({
   const [customEmail, setCustomEmail] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
 
-  // Reset on each open + load an initial unfiltered batch.
+  // Debounced search whenever the query or tab changes. `setLoading` is
+  // intentionally called inside the timeout callback (and not in the effect
+  // body) so we don't trigger a cascading render right when the effect runs.
   useEffect(() => {
-    if (!open) return;
-    setTab("existing");
-    setQuery("");
-    setActiveIdx(0);
-    setCustomName("");
-    setCustomCompany("");
-    setCustomEmail("");
-    setCustomError(null);
-    let cancelled = false;
-    setLoading(true);
-    searchQuotationRecipients(workspaceId, "").then((res) => {
-      if (cancelled) return;
-      setLoading(false);
-      if (res.ok) setResults(res.results);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, workspaceId]);
-
-  // Debounced search on query changes (only when the existing tab is active).
-  useEffect(() => {
-    if (!open || tab !== "existing") return;
+    if (tab !== "existing") return;
     const handle = window.setTimeout(async () => {
       setLoading(true);
       const res = await searchQuotationRecipients(workspaceId, query);
@@ -82,7 +92,7 @@ export default function RecipientPicker({
       }
     }, 150);
     return () => window.clearTimeout(handle);
-  }, [query, open, workspaceId, tab]);
+  }, [query, workspaceId, tab]);
 
   function submitCustom() {
     const name = customName.trim();
@@ -97,7 +107,7 @@ export default function RecipientPicker({
       company: customCompany.trim(),
       email: customEmail.trim(),
     });
-    onOpenChange(false);
+    onClose();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -118,17 +128,13 @@ export default function RecipientPicker({
       const picked = results[activeIdx];
       if (picked) {
         onSelect(picked);
-        onOpenChange(false);
+        onClose();
       }
     }
   }
 
   return (
-    <Popup
-      open={open}
-      onOpenChange={onOpenChange}
-      className="max-h-[80vh] overflow-hidden sm:max-w-xl"
-    >
+    <>
       <div className="relative overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
         <div
           aria-hidden
@@ -221,7 +227,7 @@ export default function RecipientPicker({
                         onMouseEnter={() => setActiveIdx(idx)}
                         onClick={() => {
                           onSelect(r);
-                          onOpenChange(false);
+                          onClose();
                         }}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
@@ -385,7 +391,7 @@ export default function RecipientPicker({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onOpenChange(false)}
+                onClick={onClose}
               >
                 Cancel
               </Button>
@@ -402,6 +408,6 @@ export default function RecipientPicker({
           </div>
         </>
       )}
-    </Popup>
+    </>
   );
 }

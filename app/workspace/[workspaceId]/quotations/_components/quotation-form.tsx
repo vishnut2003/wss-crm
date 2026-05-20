@@ -37,7 +37,6 @@ import {
   formatCurrency,
   lineSubtotal,
   type QuotationCurrency,
-  type QuotationRecipientKind,
   type QuotationStatus,
 } from "@/lib/quotation";
 import {

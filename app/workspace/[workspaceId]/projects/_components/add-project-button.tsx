@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
@@ -81,25 +81,28 @@ export default function AddProjectButton({
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [team, setTeam] = useState<string[]>([]);
 
-  const [state, formAction, pending] = useActionState(
-    (prev: ProjectActionState, formData: FormData) =>
-      createProject(workspaceId, prev, formData),
-    INITIAL_STATE,
-  );
+  const [state, setState] = useState<ProjectActionState>(INITIAL_STATE);
+  const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (state.ok) {
-      setOpen(false);
-      setName("");
-      setDescription("");
-      setClient("");
-      setStatus("planning");
-      setStartDate(null);
-      setEndDate(null);
-      setTeam([]);
-      router.refresh();
-    }
-  }, [state, router]);
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+      const result = await createProject(workspaceId, state, formData);
+      if (result.ok) {
+        setOpen(false);
+        setName("");
+        setDescription("");
+        setClient("");
+        setStatus("planning");
+        setStartDate(null);
+        setEndDate(null);
+        setTeam([]);
+        setState(INITIAL_STATE);
+        router.refresh();
+      } else {
+        setState(result);
+      }
+    });
+  };
 
   function handleOpenChange(next: boolean) {
     if (pending) return;

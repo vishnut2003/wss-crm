@@ -14,7 +14,6 @@ import {
   ShoppingCart,
   UserPlus,
   Users,
-  Wallet,
 } from "lucide-react";
 import type { UserRole } from "@/lib/user";
 

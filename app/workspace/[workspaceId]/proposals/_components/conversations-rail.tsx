@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FileText, MessageSquarePlus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import Button from "@/components/button";
+import Popup from "@/components/popup";
+import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { deleteProposalChat } from "../actions";
 import type { SerializedProposalChat } from "../_lib/serialize";
 import { useRail } from "./proposals-chat-shell";
@@ -48,11 +51,16 @@ export default function ConversationsRail({
   const router = useRouter();
   const pathname = usePathname();
   const { isRailOpen, setIsRailOpen } = useRail();
-  const [, startTransition] = useTransition();
 
   const [query, setQuery] = useState("");
   const [isRailExpanded, setIsRailExpanded] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [pendingDelete, startDeleteTransition] = useTransition();
 
   const railEnterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const railLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,15 +112,32 @@ export default function ConversationsRail({
     router.push(`/workspace/${workspaceId}/proposals/chat/${id}`);
   }
 
-  function handleDelete(id: string) {
+  function requestDelete(id: string, title: string) {
     setErrorMessage(null);
-    startTransition(async () => {
-      const result = await deleteProposalChat(workspaceId, id);
+    setConfirmError(null);
+    setConfirmTarget({ id, title });
+  }
+
+  function handleConfirmOpenChange(next: boolean) {
+    if (pendingDelete) return;
+    if (!next) {
+      setConfirmTarget(null);
+      setConfirmError(null);
+    }
+  }
+
+  function confirmDelete() {
+    const target = confirmTarget;
+    if (!target) return;
+    setConfirmError(null);
+    startDeleteTransition(async () => {
+      const result = await deleteProposalChat(workspaceId, target.id);
       if (!result.ok) {
-        setErrorMessage(result.error);
+        setConfirmError(result.error);
         return;
       }
-      if (id === activeId) {
+      setConfirmTarget(null);
+      if (target.id === activeId) {
         router.push(`/workspace/${workspaceId}/proposals/new`);
       } else {
         router.refresh();
@@ -216,13 +241,13 @@ export default function ConversationsRail({
                         aria-label={`Delete ${convo.title}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(convo.id);
+                          requestDelete(convo.id, convo.title);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleDelete(convo.id);
+                            requestDelete(convo.id, convo.title);
                           }
                         }}
                         className="absolute right-2 grid h-5 w-5 cursor-pointer place-items-center rounded text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-300/60 hover:text-rose-500 group-hover/item:opacity-100 dark:hover:bg-zinc-700/60"
@@ -243,6 +268,59 @@ export default function ConversationsRail({
           {errorMessage}
         </div>
       ) : null}
+
+      <Popup
+        open={confirmTarget !== null}
+        onOpenChange={handleConfirmOpenChange}
+      >
+        <div className="px-6 pb-2 pt-6">
+          <DialogTitle className="text-[17px] font-semibold leading-tight tracking-tight text-zinc-900 dark:text-white">
+            Delete proposal chat
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-[12.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+            Permanently delete{" "}
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              {confirmTarget?.title}
+            </span>
+            ? The conversation history and any generated proposal data will be
+            removed. This can&apos;t be undone.
+          </DialogDescription>
+        </div>
+
+        <div className="px-6 pb-6 pt-4">
+          {confirmError ? (
+            <p
+              role="alert"
+              className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+            >
+              {confirmError}
+            </p>
+          ) : null}
+
+          <div className="-mx-6 flex items-center justify-end gap-2 border-t border-zinc-100 px-6 pt-4 dark:border-zinc-800">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleConfirmOpenChange(false)}
+              disabled={pendingDelete}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={confirmDelete}
+              disabled={pendingDelete}
+              aria-busy={pendingDelete}
+              className="!bg-gradient-to-r !from-red-500 !to-red-600 !shadow-red-500/25 hover:!shadow-red-500/35"
+            >
+              {pendingDelete ? "Deleting…" : "Delete chat"}
+            </Button>
+          </div>
+        </div>
+      </Popup>
     </aside>
   );
 }

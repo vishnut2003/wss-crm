@@ -33,6 +33,18 @@ export type ClaudeUsage = {
   cacheReadInputTokens: number;
 };
 
+export type ClaudeTool = {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+};
+
+export type ClaudeToolCall = {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+};
+
 export type ClaudeRequestOptions = {
   /** Optional system prompt. Cached by default for cheaper repeated calls. */
   system?: string;
@@ -46,12 +58,15 @@ export type ClaudeRequestOptions = {
   temperature?: number;
   /** Apply ephemeral prompt caching to the system prompt. Defaults to true. */
   cacheSystem?: boolean;
+  /** Tools Claude may call. */
+  tools?: ClaudeTool[];
   /** AbortSignal for cancelling the request. */
   signal?: AbortSignal;
 };
 
 export type ClaudeResponse = {
   text: string;
+  toolCalls: ClaudeToolCall[];
   stopReason: string | null;
   usage: ClaudeUsage;
   raw: Anthropic.Messages.Message;
@@ -81,6 +96,19 @@ function extractText(message: Anthropic.Messages.Message): string {
     .join("");
 }
 
+function extractToolCalls(message: Anthropic.Messages.Message): ClaudeToolCall[] {
+  return message.content
+    .filter(
+      (block): block is Anthropic.Messages.ToolUseBlock =>
+        block.type === "tool_use",
+    )
+    .map((block) => ({
+      id: block.id,
+      name: block.name,
+      input: (block.input ?? {}) as Record<string, unknown>,
+    }));
+}
+
 function normaliseUsage(usage: Anthropic.Messages.Usage): ClaudeUsage {
   return {
     inputTokens: usage.input_tokens,
@@ -101,6 +129,7 @@ export async function generateClaudeResponse({
   maxTokens = DEFAULT_MAX_TOKENS,
   temperature,
   cacheSystem = true,
+  tools,
   signal,
 }: ClaudeRequestOptions): Promise<ClaudeResponse> {
   const client = getClient();
@@ -113,6 +142,7 @@ export async function generateClaudeResponse({
       ...(buildSystemParam(system, cacheSystem)
         ? { system: buildSystemParam(system, cacheSystem) }
         : {}),
+      ...(tools && tools.length ? { tools } : {}),
       messages: messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -123,6 +153,7 @@ export async function generateClaudeResponse({
 
   return {
     text: extractText(response),
+    toolCalls: extractToolCalls(response),
     stopReason: response.stop_reason ?? null,
     usage: normaliseUsage(response.usage),
     raw: response,

@@ -5,6 +5,7 @@ import {
   ArrowRight,
   CalendarClock,
   CircleDot,
+  FileSpreadsheet,
   FileText,
   History,
   MessageSquare,
@@ -40,6 +41,7 @@ const ICONS: Record<LeadActivityType, typeof Sparkles> = {
   tags_changed: TagIcon,
   details_updated: Pencil,
   converted_to_customer: UserCheck,
+  quotation_created: FileSpreadsheet,
 };
 
 const ACCENTS: Record<LeadActivityType, string> = {
@@ -52,6 +54,7 @@ const ACCENTS: Record<LeadActivityType, string> = {
   tags_changed: "from-zinc-500 to-zinc-700 dark:from-zinc-400 dark:to-zinc-600",
   details_updated: "from-zinc-500 to-zinc-700 dark:from-zinc-400 dark:to-zinc-600",
   converted_to_customer: "from-emerald-500 to-green-600",
+  quotation_created: "from-sky-500 to-indigo-600",
 };
 
 type HistoryButtonProps = {

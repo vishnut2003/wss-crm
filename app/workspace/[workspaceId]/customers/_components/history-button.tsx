@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   CircleDot,
+  FileSpreadsheet,
   FileText,
   FolderKanban,
   History,
@@ -38,6 +39,7 @@ const ICONS: Record<CustomerActivityType, typeof Sparkles> = {
   details_updated: Pencil,
   billing_updated: Receipt,
   project_linked: FolderKanban,
+  quotation_created: FileSpreadsheet,
 };
 
 const ACCENTS: Record<CustomerActivityType, string> = {
@@ -51,6 +53,7 @@ const ACCENTS: Record<CustomerActivityType, string> = {
     "from-zinc-500 to-zinc-700 dark:from-zinc-400 dark:to-zinc-600",
   billing_updated: "from-amber-500 to-orange-600",
   project_linked: "from-indigo-500 to-violet-600",
+  quotation_created: "from-sky-500 to-indigo-600",
 };
 
 type HistoryButtonProps = {

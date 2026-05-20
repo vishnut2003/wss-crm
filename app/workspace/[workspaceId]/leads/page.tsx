@@ -181,6 +181,12 @@ function buildActivitySummary(
         return `converted the lead into customer ${customerName}.`;
       return "converted the lead into a customer.";
     }
+    case "quotation_created": {
+      const number = data.quotationNumber as string | undefined;
+      return number
+        ? `created quotation ${number}.`
+        : "created a new quotation for this lead.";
+    }
   }
 }
 

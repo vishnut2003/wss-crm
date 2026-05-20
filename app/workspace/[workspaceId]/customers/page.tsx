@@ -154,6 +154,12 @@ function buildActivitySummary(
         ? `linked the project ${name}.`
         : "linked a new project to this customer.";
     }
+    case "quotation_created": {
+      const number = data.quotationNumber as string | undefined;
+      return number
+        ? `created quotation ${number}.`
+        : "created a new quotation for this customer.";
+    }
   }
 }
 

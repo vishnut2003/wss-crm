@@ -109,6 +109,7 @@ export const LEAD_ACTIVITY_TYPES = [
   "tags_changed",
   "details_updated",
   "converted_to_customer",
+  "quotation_created",
 ] as const;
 export type LeadActivityType = (typeof LEAD_ACTIVITY_TYPES)[number];
 
@@ -122,6 +123,7 @@ export const LEAD_ACTIVITY_LABEL: Record<LeadActivityType, string> = {
   tags_changed: "Tags updated",
   details_updated: "Details updated",
   converted_to_customer: "Converted to customer",
+  quotation_created: "Quotation created",
 };
 
 // Human labels for the field keys emitted by the `details_updated` event.

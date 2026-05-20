@@ -39,6 +39,7 @@ export const CUSTOMER_ACTIVITY_TYPES = [
   "details_updated",
   "billing_updated",
   "project_linked",
+  "quotation_created",
 ] as const;
 export type CustomerActivityType = (typeof CUSTOMER_ACTIVITY_TYPES)[number];
 
@@ -51,6 +52,7 @@ export const CUSTOMER_ACTIVITY_LABEL: Record<CustomerActivityType, string> = {
   details_updated: "Details updated",
   billing_updated: "Billing details updated",
   project_linked: "Project linked",
+  quotation_created: "Quotation created",
 };
 
 // Human labels for the field keys emitted by the `details_updated` event.

@@ -94,25 +94,31 @@ function buildPreview(text: string): string {
 async function loadWorkspaceForActor(workspaceId: string) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { error: "Your session expired. Please sign in again." as const };
+    return {
+      ok: false as const,
+      error: "Your session expired. Please sign in again.",
+    };
   }
   if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-    return { error: "Invalid workspace." as const };
+    return { ok: false as const, error: "Invalid workspace." };
   }
 
   await connectDB();
 
   const workspace = await Workspace.findById(workspaceId);
-  if (!workspace) return { error: "Workspace not found." as const };
+  if (!workspace) {
+    return { ok: false as const, error: "Workspace not found." };
+  }
 
   const role = getActorRole(workspace, session.user.id);
   if (!canUseProposals(role)) {
     return {
-      error: "You don't have permission to use the proposal assistant." as const,
+      ok: false as const,
+      error: "You don't have permission to use the proposal assistant.",
     };
   }
 
-  return { session, workspace, role };
+  return { ok: true as const, session, workspace, role };
 }
 
 type ListProposalChatsResult =
@@ -123,7 +129,7 @@ export async function listProposalChats(
   workspaceId: string,
 ): Promise<ListProposalChatsResult> {
   const ctx = await loadWorkspaceForActor(workspaceId);
-  if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (!ctx.ok) return ctx;
 
   const chats = (await ProposalChat.find({ workspace: workspaceId })
     .sort({ updatedAt: -1 })
@@ -146,7 +152,7 @@ export async function sendProposalMessage(
   text: string,
 ): Promise<SendProposalMessageResult> {
   const ctx = await loadWorkspaceForActor(workspaceId);
-  if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (!ctx.ok) return ctx;
   const { session, workspace } = ctx;
 
   const trimmed = text.trim();
@@ -185,7 +191,7 @@ export async function sendProposalMessage(
     proposal: null,
     attachments: [],
     createdAt: now,
-  } as (typeof chat.messages)[number]);
+  } as unknown as (typeof chat.messages)[number]);
   chat.lastMessagePreview = buildPreview(trimmed);
   await chat.save();
 
@@ -237,7 +243,7 @@ export async function sendProposalMessage(
   };
 
   chat.messages.push(
-    assistantMessage as (typeof chat.messages)[number],
+    assistantMessage as unknown as (typeof chat.messages)[number],
   );
   chat.lastMessagePreview = buildPreview(assistantMessage.content);
   await chat.save();
@@ -261,7 +267,7 @@ export async function deleteProposalChat(
   chatId: string,
 ): Promise<DeleteProposalChatResult> {
   const ctx = await loadWorkspaceForActor(workspaceId);
-  if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (!ctx.ok) return ctx;
 
   if (!mongoose.Types.ObjectId.isValid(chatId)) {
     return { ok: false, error: "Invalid chat id." };

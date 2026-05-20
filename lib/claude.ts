@@ -36,7 +36,12 @@ export type ClaudeUsage = {
 export type ClaudeTool = {
   name: string;
   description: string;
-  input_schema: Record<string, unknown>;
+  input_schema: {
+    type: "object";
+    properties?: Readonly<Record<string, unknown>>;
+    required?: readonly string[];
+    readonly [k: string]: unknown;
+  };
 };
 
 export type ClaudeToolCall = {
@@ -142,7 +147,9 @@ export async function generateClaudeResponse({
       ...(buildSystemParam(system, cacheSystem)
         ? { system: buildSystemParam(system, cacheSystem) }
         : {}),
-      ...(tools && tools.length ? { tools } : {}),
+      ...(tools && tools.length
+        ? { tools: tools as unknown as Anthropic.Messages.Tool[] }
+        : {}),
       messages: messages.map((m) => ({
         role: m.role,
         content: m.content,

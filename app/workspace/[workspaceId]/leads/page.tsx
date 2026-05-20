@@ -13,6 +13,7 @@ import {
   UserCircle2,
   UserPlus,
 } from "lucide-react";
+import "@/lib/mongoose-filter";
 import mongoose, { type FilterQuery } from "mongoose";
 import Lead, {
   LEAD_FIELD_LABEL,
@@ -378,7 +379,7 @@ export default async function LeadsPage({
 
   const assignableMembers: LeadFormMember[] = Array.from(salesExecIds)
     .map((id) => userById.get(id))
-    .filter((m): m is LeadFormMember => Boolean(m));
+    .filter((m) => m !== undefined);
 
   // Priority sort weight applied after fetch
   const priorityWeight: Record<LeadPriority, number> = {

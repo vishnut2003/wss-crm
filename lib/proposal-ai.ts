@@ -151,7 +151,7 @@ const generateProposalPdfTool: ClaudeTool = {
   name: "generate_proposal_pdf",
   description:
     "Emit a fully-formed proposal document. The frontend will render the returned data as a PDF for the user. Call this ONLY when the user explicitly asks to generate, draft, create, or build the proposal PDF — not for general discussion.",
-  input_schema: proposalToolSchema as unknown as Record<string, unknown>,
+  input_schema: proposalToolSchema,
 };
 
 const SYSTEM_PROMPT = `You are the proposal assistant inside the WSS CRM. Your ONLY job is to help the sales team build client proposals.

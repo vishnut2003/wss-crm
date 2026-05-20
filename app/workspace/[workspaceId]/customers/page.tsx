@@ -12,6 +12,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import "@/lib/mongoose-filter";
 import mongoose, { type FilterQuery } from "mongoose";
 import Customer, {
   CUSTOMER_FIELD_LABEL,
@@ -268,7 +269,7 @@ export default async function CustomersPage({
 
   const assignableMembers: CustomerFormMember[] = Array.from(salesExecIds)
     .map((id) => userById.get(id))
-    .filter((m): m is CustomerFormMember => Boolean(m));
+    .filter((m) => m !== undefined);
 
   const convertibleLeads: ConvertibleLead[] = convertibleLeadsDocs.map((l) => ({
     id: l._id.toString(),

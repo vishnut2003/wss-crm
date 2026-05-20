@@ -5,6 +5,7 @@ import {
   CreditCard,
   FileSpreadsheet,
   FileText,
+  FolderKanban,
   IdCard,
   LayoutDashboardIcon,
   Receipt,
@@ -36,13 +37,22 @@ export const navSections: NavSection[] = [
     items: [{ href: "/", label: "Overview", icon: LayoutDashboardIcon }],
   },
   {
+    heading: "Customers",
+    items: [{ href: "/customers", label: "Customers", icon: Users }],
+    restrictedTo: ["owner", "admin", "sales_manager", "sales_executive"],
+  },
+  {
     heading: "Sales",
     items: [
       { href: "/leads", label: "Leads & Prospects", icon: UserPlus },
-      { href: "/customers", label: "Customers", icon: Users },
       { href: "/proposals", label: "AI Proposals", icon: FileText },
       { href: "/quotations", label: "Quotations", icon: FileSpreadsheet },
     ],
+    restrictedTo: ["owner", "admin", "sales_manager", "sales_executive"],
+  },
+  {
+    heading: "Project Management",
+    items: [{ href: "/projects", label: "Projects", icon: FolderKanban }],
     restrictedTo: ["owner", "admin", "sales_manager", "sales_executive"],
   },
   {

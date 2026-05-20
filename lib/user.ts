@@ -5,6 +5,8 @@ export const USER_ROLES = [
   "sales_executive",
   "accounts",
   "hr",
+  "project_manager",
+  "team_member",
 ] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
@@ -36,6 +38,8 @@ export const ROLE_LABEL: Record<UserRole, string> = {
   sales_executive: "Sales Executive",
   accounts: "Accounts",
   hr: "HR",
+  project_manager: "Project Manager",
+  team_member: "Team Member",
 };
 
 export const ROLE_BADGE_CLASS: Record<UserRole, string> = {
@@ -50,4 +54,8 @@ export const ROLE_BADGE_CLASS: Record<UserRole, string> = {
   accounts:
     "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/25",
   hr: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/25",
+  project_manager:
+    "bg-indigo-100 text-indigo-700 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/25",
+  team_member:
+    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:ring-slate-500/25",
 };

@@ -45,6 +45,8 @@ export const navSections: NavSection[] = [
       "sales_manager",
       "sales_executive",
       "accounts",
+      "project_manager",
+      "team_member",
     ],
   },
   {
@@ -59,7 +61,7 @@ export const navSections: NavSection[] = [
   {
     heading: "Project Management",
     items: [{ href: "/projects", label: "Projects", icon: FolderKanban }],
-    restrictedTo: ["owner", "admin"],
+    restrictedTo: ["owner", "admin", "project_manager", "team_member"],
   },
   {
     heading: "Accounts",

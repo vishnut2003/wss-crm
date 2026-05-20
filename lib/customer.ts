@@ -71,6 +71,8 @@ export const CUSTOMER_VIEWER_ROLES: UserRole[] = [
   "sales_manager",
   "sales_executive",
   "accounts",
+  "project_manager",
+  "team_member",
 ];
 
 export const CUSTOMER_FULL_MANAGER_ROLES: UserRole[] = [

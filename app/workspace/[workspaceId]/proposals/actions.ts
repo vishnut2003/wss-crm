@@ -131,7 +131,10 @@ export async function listProposalChats(
   const ctx = await loadWorkspaceForActor(workspaceId);
   if (!ctx.ok) return ctx;
 
-  const chats = (await ProposalChat.find({ workspace: workspaceId })
+  const chats = (await ProposalChat.find({
+    workspace: workspaceId,
+    createdBy: ctx.session.user.id,
+  })
     .sort({ updatedAt: -1 })
     .lean()) as unknown as ChatDocLike[];
 
@@ -169,6 +172,7 @@ export async function sendProposalMessage(
     chat = await ProposalChat.findOne({
       _id: chatId,
       workspace: workspaceId,
+      createdBy: session.user.id,
     });
     if (!chat) return { ok: false, error: "Chat not found." };
   } else {
@@ -276,6 +280,7 @@ export async function deleteProposalChat(
   const result = await ProposalChat.deleteOne({
     _id: chatId,
     workspace: workspaceId,
+    createdBy: ctx.session.user.id,
   });
   if (result.deletedCount === 0) {
     return { ok: false, error: "Chat not found." };

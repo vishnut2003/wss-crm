@@ -68,7 +68,10 @@ export default async function ProposalsPage({ params }: ProposalsPageProps) {
     role,
   };
 
-  const chats = (await ProposalChat.find({ workspace: workspaceId })
+  const chats = (await ProposalChat.find({
+    workspace: workspaceId,
+    createdBy: session.user.id,
+  })
     .sort({ updatedAt: -1 })
     .limit(50)
     .lean()) as unknown as ChatDocLike[];

@@ -14,6 +14,12 @@ import {
   type ProposalDocument,
 } from "@/lib/proposal-ai";
 import type { ClaudeMessage } from "@/lib/claude";
+import {
+  serializeChat,
+  type ChatDocLike,
+  type SerializedProposalChat,
+  type SerializedProposalMessage,
+} from "./_lib/serialize";
 
 const ALLOWED_ROLES: ReadonlyArray<UserRole> = [
   "owner",
@@ -24,60 +30,6 @@ const ALLOWED_ROLES: ReadonlyArray<UserRole> = [
 
 function canUseProposals(role: UserRole): boolean {
   return ALLOWED_ROLES.includes(role);
-}
-
-type SerializedProposalMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  proposal: ProposalDocument | null;
-  createdAt: string;
-};
-
-type SerializedProposalChat = {
-  id: string;
-  workspaceId: string;
-  title: string;
-  preview: string;
-  updatedAt: string;
-  createdAt: string;
-  messages: SerializedProposalMessage[];
-};
-
-type ChatDocLike = {
-  _id: mongoose.Types.ObjectId;
-  workspace: mongoose.Types.ObjectId;
-  title: string;
-  lastMessagePreview?: string;
-  messages: Array<{
-    _id?: mongoose.Types.ObjectId;
-    role: "user" | "assistant";
-    content: string;
-    proposal?: { version: number; payload: unknown } | null;
-    createdAt: Date;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-function serializeChat(doc: ChatDocLike): SerializedProposalChat {
-  return {
-    id: String(doc._id),
-    workspaceId: String(doc.workspace),
-    title: doc.title,
-    preview: doc.lastMessagePreview ?? "",
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
-    messages: doc.messages.map((m, idx) => ({
-      id: m._id ? String(m._id) : `${String(doc._id)}-${idx}`,
-      role: m.role,
-      content: m.content,
-      proposal: m.proposal?.payload
-        ? (m.proposal.payload as ProposalDocument)
-        : null,
-      createdAt: m.createdAt.toISOString(),
-    })),
-  };
 }
 
 function buildTitleFromText(text: string): string {
@@ -119,26 +71,6 @@ async function loadWorkspaceForActor(workspaceId: string) {
   }
 
   return { ok: true as const, session, workspace, role };
-}
-
-type ListProposalChatsResult =
-  | { ok: true; chats: SerializedProposalChat[] }
-  | { ok: false; error: string };
-
-export async function listProposalChats(
-  workspaceId: string,
-): Promise<ListProposalChatsResult> {
-  const ctx = await loadWorkspaceForActor(workspaceId);
-  if (!ctx.ok) return ctx;
-
-  const chats = (await ProposalChat.find({
-    workspace: workspaceId,
-    createdBy: ctx.session.user.id,
-  })
-    .sort({ updatedAt: -1 })
-    .lean()) as unknown as ChatDocLike[];
-
-  return { ok: true, chats: chats.map(serializeChat) };
 }
 
 type SendProposalMessageResult =
@@ -252,9 +184,10 @@ export async function sendProposalMessage(
   chat.lastMessagePreview = buildPreview(assistantMessage.content);
   await chat.save();
 
-  // revalidatePath is best-effort — the client will refresh state from the
-  // returned chat so a stale RSC payload isn't a problem.
+  // Refresh the rail's chat list (layout query) and, if this was an existing
+  // chat, its detail page so the server-rendered messages stay in sync.
   revalidatePath(`/workspace/${workspaceId}/proposals`);
+  revalidatePath(`/workspace/${workspaceId}/proposals/chat/${chat._id}`);
 
   const serialized = serializeChat(chat as unknown as ChatDocLike);
   const newAssistant = serialized.messages[serialized.messages.length - 1];

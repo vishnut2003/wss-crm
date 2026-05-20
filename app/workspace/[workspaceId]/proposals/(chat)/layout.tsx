@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import type { WorkspaceColor } from "@/lib/workspace";
 import { requireWorkspaceAccess } from "@/lib/workspace-access";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import ProposalChat from "@/models/proposal-chat";
-import { serializeChat, type ChatDocLike } from "./_lib/serialize";
-import ChatList from "./_components/chat-list";
+import {
+  serializeChat,
+  type ChatDocLike,
+} from "../_lib/serialize";
+import ProposalsChatShell from "../_components/proposals-chat-shell";
 
-export const metadata: Metadata = {
-  title: "Proposals — WSS CRM",
-};
-
-type ProposalsPageProps = {
+type Props = {
   params: Promise<{ workspaceId: string }>;
+  children: ReactNode;
 };
 
-export default async function ProposalsPage({ params }: ProposalsPageProps) {
+export default async function ChatLayout({ params, children }: Props) {
   const { workspaceId } = await params;
 
   const { session, workspace: doc, role } = await requireWorkspaceAccess({
@@ -47,8 +47,15 @@ export default async function ProposalsPage({ params }: ProposalsPageProps) {
         image: session.user.image,
       }}
       workspace={workspace}
+      compactSidebar
+      fullBleed
     >
-      <ChatList workspaceId={workspace.id} conversations={conversations} />
+      <ProposalsChatShell
+        workspaceId={workspace.id}
+        conversations={conversations}
+      >
+        {children}
+      </ProposalsChatShell>
     </DashboardLayout>
   );
 }

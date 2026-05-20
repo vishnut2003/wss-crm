@@ -5,58 +5,37 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowUp,
   FileText,
-  MessageSquarePlus,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  Search,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/cn";
 import type { ProposalDocument } from "@/lib/proposal-ai";
-import {
-  deleteProposalChat,
-  sendProposalMessage,
-} from "../actions";
+import { sendProposalMessage } from "../actions";
+import type {
+  SerializedProposalChat,
+  SerializedProposalMessage,
+} from "../_lib/serialize";
+import { useRail } from "./proposals-chat-shell";
 import ProposalPdfViewer from "./proposal-pdf-viewer";
 
-export type ChatRole = "user" | "assistant";
-
-export type SerializedProposalMessage = {
-  id: string;
-  role: ChatRole;
-  content: string;
-  proposal: ProposalDocument | null;
-  createdAt: string;
-};
-
-export type SerializedProposalChat = {
-  id: string;
+type Props = {
   workspaceId: string;
-  title: string;
-  preview: string;
-  updatedAt: string;
-  createdAt: string;
-  messages: SerializedProposalMessage[];
-};
-
-type ProposalsChatProps = {
-  workspaceId: string;
-  conversations: SerializedProposalChat[];
+  workspaceName: string;
   userImage: string | null;
   userInitial: string;
-  workspaceName: string;
+  initialChat: SerializedProposalChat | null;
 };
 
 const suggestionPrompts = [
@@ -72,109 +51,48 @@ function makeLocalId() {
     .slice(2, 8)}`;
 }
 
-function formatRelative(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diffMs = Date.now() - then;
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function latestProposalIn(
-  chat: SerializedProposalChat | null,
+  messages: SerializedProposalMessage[],
 ): ProposalDocument | null {
-  if (!chat) return null;
-  for (let i = chat.messages.length - 1; i >= 0; i--) {
-    const m = chat.messages[i];
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
     if (m.role === "assistant" && m.proposal) return m.proposal;
   }
   return null;
 }
 
-export default function ProposalsChat({
+export default function ChatWorkspace({
   workspaceId,
-  conversations: initialConversations,
+  workspaceName,
   userImage,
   userInitial,
-  workspaceName,
-}: ProposalsChatProps) {
-  const [conversations, setConversations] = useState<SerializedProposalChat[]>(
-    initialConversations,
+  initialChat,
+}: Props) {
+  const router = useRouter();
+  const { setIsRailOpen } = useRail();
+
+  const [messages, setMessages] = useState<SerializedProposalMessage[]>(
+    initialChat?.messages ?? [],
   );
-  const [activeId, setActiveId] = useState<string | null>(
-    initialConversations[0]?.id ?? null,
-  );
-  const [query, setQuery] = useState("");
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pdfWidth, setPdfWidth] = useState(40);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
-  const [isRailExpanded, setIsRailExpanded] = useState(false);
-  const [isRailOpen, setIsRailOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isResizingPdf = useRef(false);
-  const railEnterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const railLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleRailEnter = () => {
-    if (railLeaveTimerRef.current) {
-      clearTimeout(railLeaveTimerRef.current);
-      railLeaveTimerRef.current = null;
-    }
-    if (isRailExpanded) return;
-    railEnterTimerRef.current = setTimeout(() => setIsRailExpanded(true), 200);
-  };
+  const chatId = initialChat?.id ?? null;
+  const title = initialChat?.title ?? "New conversation";
 
-  const handleRailLeave = () => {
-    if (railEnterTimerRef.current) {
-      clearTimeout(railEnterTimerRef.current);
-      railEnterTimerRef.current = null;
-    }
-    if (!isRailExpanded) return;
-    railLeaveTimerRef.current = setTimeout(() => setIsRailExpanded(false), 350);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (railEnterTimerRef.current) clearTimeout(railEnterTimerRef.current);
-      if (railLeaveTimerRef.current) clearTimeout(railLeaveTimerRef.current);
-    };
-  }, []);
-
-  const active = useMemo(
-    () => conversations.find((c) => c.id === activeId) ?? null,
-    [conversations, activeId],
-  );
-
-  const activeProposal = useMemo(() => latestProposalIn(active), [active]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter(
-      (c) =>
-        c.title.toLowerCase().includes(q) ||
-        c.preview.toLowerCase().includes(q),
-    );
-  }, [conversations, query]);
+  const activeProposal = useMemo(() => latestProposalIn(messages), [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [active?.messages.length, isThinking, activeId]);
+  }, [messages.length, isThinking]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -215,35 +133,6 @@ export default function ProposalsChat({
     document.body.style.userSelect = "none";
   }
 
-  function startNewChat() {
-    // Don't hit the DB until the user actually sends something.
-    setActiveId(null);
-    setInput("");
-    setErrorMessage(null);
-    setIsRailOpen(false);
-  }
-
-  function selectChat(id: string) {
-    setActiveId(id);
-    setIsRailOpen(false);
-  }
-
-  function handleDelete(id: string) {
-    const previous = conversations;
-    setConversations((prev) => prev.filter((c) => c.id !== id));
-    if (id === activeId) {
-      const next = previous.filter((c) => c.id !== id)[0]?.id ?? null;
-      setActiveId(next);
-    }
-    startTransition(async () => {
-      const result = await deleteProposalChat(workspaceId, id);
-      if (!result.ok) {
-        setErrorMessage(result.error);
-        setConversations(previous);
-      }
-    });
-  }
-
   async function sendMessage(rawText: string) {
     const text = rawText.trim();
     if (!text || isThinking) return;
@@ -252,8 +141,6 @@ export default function ProposalsChat({
     setInput("");
     setIsThinking(true);
 
-    // Optimistic update — if no active chat, create a placeholder so the user
-    // sees their message immediately. The server response will replace it.
     const optimisticUserMsg: SerializedProposalMessage = {
       id: makeLocalId(),
       role: "user",
@@ -261,67 +148,31 @@ export default function ProposalsChat({
       proposal: null,
       createdAt: new Date().toISOString(),
     };
+    const snapshot = messages;
+    setMessages((prev) => [...prev, optimisticUserMsg]);
 
-    const previousActiveId = activeId;
-    let optimisticChatId = activeId;
-    let snapshot: SerializedProposalChat[] = conversations;
-
-    setConversations((prev) => {
-      snapshot = prev;
-      if (!previousActiveId) {
-        // brand-new chat placeholder until server returns the real id
-        const tempId = makeLocalId();
-        optimisticChatId = tempId;
-        const placeholder: SerializedProposalChat = {
-          id: tempId,
-          workspaceId,
-          title: text.length > 60 ? `${text.slice(0, 60)}…` : text,
-          preview: text,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          messages: [optimisticUserMsg],
-        };
-        return [placeholder, ...prev];
-      }
-      return prev.map((c) =>
-        c.id === previousActiveId
-          ? {
-              ...c,
-              preview: text,
-              updatedAt: new Date().toISOString(),
-              messages: [...c.messages, optimisticUserMsg],
-            }
-          : c,
-      );
-    });
-
-    if (!previousActiveId) setActiveId(optimisticChatId);
-
-    const result = await sendProposalMessage(
-      workspaceId,
-      previousActiveId,
-      text,
-    );
+    const result = await sendProposalMessage(workspaceId, chatId, text);
 
     setIsThinking(false);
 
     if (!result.ok) {
       setErrorMessage(result.error);
-      // Roll back the optimistic message so the user can retry without dupes.
-      setConversations(snapshot);
-      if (!previousActiveId) setActiveId(snapshot[0]?.id ?? null);
+      setMessages(snapshot);
       setInput(text);
       return;
     }
 
-    // Replace the optimistic chat with the authoritative server chat.
-    setConversations((prev) => {
-      const without = prev.filter(
-        (c) => c.id !== optimisticChatId && c.id !== result.chat.id,
+    if (!chatId) {
+      // First send on /new — swap URL to the persisted chat. The route's
+      // server fetch will hydrate the full chat including the assistant
+      // reply, so we don't need to splice it locally here.
+      router.replace(
+        `/workspace/${workspaceId}/proposals/chat/${result.chat.id}`,
       );
-      return [result.chat, ...without];
-    });
-    setActiveId(result.chat.id);
+      return;
+    }
+
+    setMessages((prev) => [...prev, result.assistantMessage]);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -336,144 +187,14 @@ export default function ProposalsChat({
     }
   }
 
+  const isEmpty = messages.length === 0;
+
   return (
-    <div
-      ref={containerRef}
-      className="relative flex h-full min-h-0 w-full flex-1 overflow-hidden bg-white dark:bg-zinc-900"
-    >
-      {/* Spacer — reserves the rail's collapsed width in the flex layout */}
-      <div className="hidden w-14 shrink-0 md:block" aria-hidden />
-
-      {/* Conversations sidebar — absolute overlay so expanding doesn't resize chat */}
-      {/* Mobile backdrop when the rail is opened via the header toggle */}
-      {isRailOpen ? (
-        <div
-          onClick={() => setIsRailOpen(false)}
-          aria-hidden
-          className="absolute inset-0 z-10 bg-zinc-900/40 backdrop-blur-[1px] md:hidden"
-        />
-      ) : null}
-
-      <aside
-        data-expanded={isRailExpanded || isRailOpen ? "" : undefined}
-        onMouseEnter={handleRailEnter}
-        onMouseLeave={handleRailLeave}
-        className={cn(
-          "group/rail absolute left-0 top-0 z-20 h-full w-14 flex-col overflow-hidden border-r border-zinc-100/80 bg-zinc-50/80 backdrop-blur-sm transition-[width,box-shadow] duration-200 ease-out data-[expanded]:w-72 data-[expanded]:shadow-xl data-[expanded]:shadow-zinc-900/5 dark:border-zinc-800/70 dark:bg-zinc-950/80 dark:data-[expanded]:shadow-black/30",
-          isRailOpen ? "flex" : "hidden md:flex",
-        )}
+    <>
+      <section
+        ref={containerRef}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
       >
-        <div className="space-y-2 px-2 pb-2 pt-3 group-data-[expanded]/rail:px-3">
-          <button
-            type="button"
-            onClick={startNewChat}
-            title="New chat"
-            className="group/new inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-200/70 bg-white px-2 text-[12.5px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/60"
-          >
-            <MessageSquarePlus className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden whitespace-nowrap group-data-[expanded]/rail:inline">
-              New chat
-            </span>
-          </button>
-
-          <div className="relative hidden group-data-[expanded]/rail:block">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search chats"
-              className="h-8 w-full rounded-lg border border-transparent bg-zinc-100/80 pl-8 pr-2.5 text-[12.5px] text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-zinc-300 focus:bg-white dark:bg-zinc-900/60 dark:text-zinc-100 dark:focus:border-zinc-700 dark:focus:bg-zinc-900"
-            />
-          </div>
-        </div>
-
-        <p className="hidden px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 group-data-[expanded]/rail:block dark:text-zinc-500">
-          Conversations
-        </p>
-
-        <div className="rail-scroll flex-1 overflow-y-auto px-1.5 pb-3 group-data-[expanded]/rail:px-2">
-          {filtered.length === 0 ? (
-            <div className="mx-2 mt-4 hidden rounded-lg border border-dashed border-zinc-200 px-3 py-6 text-center text-[12px] text-zinc-500 group-data-[expanded]/rail:block dark:border-zinc-800 dark:text-zinc-400">
-              {query
-                ? "No chats match that search."
-                : "No conversations yet. Start one with the button above."}
-            </div>
-          ) : (
-            <ul className="space-y-0.5">
-              {filtered.map((convo) => {
-                const isActive = convo.id === activeId;
-                return (
-                  <li key={convo.id}>
-                    <button
-                      type="button"
-                      onClick={() => selectChat(convo.id)}
-                      title={convo.title}
-                      className={cn(
-                        "group/item relative flex w-full items-center justify-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors group-data-[expanded]/rail:items-center group-data-[expanded]/rail:justify-start group-data-[expanded]/rail:gap-2.5 group-data-[expanded]/rail:px-2.5",
-                        isActive
-                          ? "bg-zinc-200/60 text-zinc-900 dark:bg-zinc-800/70 dark:text-zinc-100"
-                          : "text-zinc-600 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/40",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors",
-                          isActive
-                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                            : "bg-transparent text-zinc-400 dark:text-zinc-500",
-                        )}
-                      >
-                        <FileText className="h-3 w-3" />
-                      </span>
-                      <span className="hidden min-w-0 flex-1 group-data-[expanded]/rail:block">
-                        <span
-                          className={cn(
-                            "block truncate text-[12.5px]",
-                            isActive ? "font-medium" : "font-normal",
-                          )}
-                        >
-                          {convo.title}
-                        </span>
-                        <span className="mt-0.5 block truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {convo.preview}
-                        </span>
-                      </span>
-                      <span className="ml-auto hidden shrink-0 items-center gap-1.5 group-data-[expanded]/rail:flex">
-                        <span className="text-[10px] text-zinc-400 transition-opacity group-hover/item:opacity-0 dark:text-zinc-500">
-                          {formatRelative(convo.updatedAt)}
-                        </span>
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`Delete ${convo.title}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(convo.id);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDelete(convo.id);
-                            }
-                          }}
-                          className="absolute right-2 grid h-5 w-5 cursor-pointer place-items-center rounded text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-300/60 hover:text-rose-500 group-hover/item:opacity-100 dark:hover:bg-zinc-700/60"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </aside>
-
-      {/* Main chat */}
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-zinc-100/80 px-4 py-4 sm:px-6 dark:border-zinc-800/70">
           <div className="flex min-w-0 items-center gap-2">
             <button
@@ -486,7 +207,7 @@ export default function ProposalsChat({
             </button>
             <div className="min-w-0">
               <p className="truncate text-[14.5px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
-                {active?.title ?? "New conversation"}
+                {title}
               </p>
               <p className="mt-0.5 line-clamp-1 text-[11.5px] text-zinc-500 dark:text-zinc-400">
                 {workspaceName}
@@ -507,7 +228,7 @@ export default function ProposalsChat({
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-          {!active || active.messages.length === 0 ? (
+          {isEmpty ? (
             <EmptyState
               onSuggestion={(s) => {
                 setInput(s);
@@ -517,7 +238,7 @@ export default function ProposalsChat({
             />
           ) : (
             <ul className="mx-auto flex w-full max-w-3xl flex-col gap-7 py-2">
-              {active.messages.map((m) => (
+              {messages.map((m) => (
                 <MessageRow
                   key={m.id}
                   message={m}
@@ -537,10 +258,7 @@ export default function ProposalsChat({
           </div>
         ) : null}
 
-        <form
-          onSubmit={handleSubmit}
-          className="px-3 pb-5 pt-2 sm:px-6"
-        >
+        <form onSubmit={handleSubmit} className="px-3 pb-5 pt-2 sm:px-6">
           <div className="mx-auto w-full max-w-3xl">
             <div className="flex items-end gap-2 rounded-3xl border border-zinc-200/80 bg-white p-2.5 shadow-[0_4px_24px_-12px_rgba(24,24,27,0.08)] transition-all focus-within:border-zinc-300 focus-within:shadow-[0_8px_28px_-12px_rgba(24,24,27,0.14)] dark:border-zinc-800/80 dark:bg-zinc-900/60 dark:focus-within:border-zinc-700">
               <textarea
@@ -568,7 +286,7 @@ export default function ProposalsChat({
         </form>
       </section>
 
-      {/* Mobile/tablet drawer backdrop */}
+      {/* PDF preview panel — inline on lg+, slide-in drawer below lg */}
       {isPdfOpen ? (
         <div
           onClick={() => setIsPdfOpen(false)}
@@ -577,7 +295,6 @@ export default function ProposalsChat({
         />
       ) : null}
 
-      {/* PDF preview panel — inline on lg+, slide-in drawer below lg */}
       <aside
         style={{ ["--pdf-w" as string]: `${pdfWidth}%` }}
         className={cn(
@@ -604,7 +321,6 @@ export default function ProposalsChat({
           />
         </div>
 
-        {/* Outer header — only shown in the mobile drawer so the close button stays reachable. */}
         <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 lg:hidden dark:border-zinc-800">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
@@ -626,7 +342,7 @@ export default function ProposalsChat({
 
         <ProposalPdfViewer proposal={activeProposal} />
       </aside>
-    </div>
+    </>
   );
 }
 
@@ -767,9 +483,7 @@ const markdownComponents: Components = {
       {children}
     </blockquote>
   ),
-  hr: () => (
-    <hr className="my-4 border-zinc-200 dark:border-zinc-800" />
-  ),
+  hr: () => <hr className="my-4 border-zinc-200 dark:border-zinc-800" />,
   table: ({ children }) => (
     <div className="mb-3 overflow-x-auto last:mb-0">
       <table className="w-full border-collapse text-[13px]">{children}</table>

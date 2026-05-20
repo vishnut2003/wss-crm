@@ -116,12 +116,40 @@ export default function ProposalsChat({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pdfWidth, setPdfWidth] = useState(40);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isRailExpanded, setIsRailExpanded] = useState(false);
   const [, startTransition] = useTransition();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isResizingPdf = useRef(false);
+  const railEnterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const railLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleRailEnter = () => {
+    if (railLeaveTimerRef.current) {
+      clearTimeout(railLeaveTimerRef.current);
+      railLeaveTimerRef.current = null;
+    }
+    if (isRailExpanded) return;
+    railEnterTimerRef.current = setTimeout(() => setIsRailExpanded(true), 200);
+  };
+
+  const handleRailLeave = () => {
+    if (railEnterTimerRef.current) {
+      clearTimeout(railEnterTimerRef.current);
+      railEnterTimerRef.current = null;
+    }
+    if (!isRailExpanded) return;
+    railLeaveTimerRef.current = setTimeout(() => setIsRailExpanded(false), 350);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (railEnterTimerRef.current) clearTimeout(railEnterTimerRef.current);
+      if (railLeaveTimerRef.current) clearTimeout(railLeaveTimerRef.current);
+    };
+  }, []);
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,
@@ -307,35 +335,44 @@ export default function ProposalsChat({
       <div className="hidden w-14 shrink-0 md:block" aria-hidden />
 
       {/* Conversations sidebar — absolute overlay so expanding doesn't resize chat */}
-      <aside className="group/rail absolute left-0 top-0 z-20 hidden h-full w-14 flex-col overflow-hidden border-r border-zinc-100 bg-zinc-50/95 backdrop-blur-sm transition-[width,box-shadow] duration-200 ease-out hover:w-72 hover:shadow-xl hover:shadow-zinc-900/10 md:flex dark:border-zinc-800 dark:bg-zinc-950/90 dark:hover:shadow-black/40">
-        <div className="space-y-3 px-2 pb-2 pt-3 group-hover/rail:px-3">
+      <aside
+        data-expanded={isRailExpanded ? "" : undefined}
+        onMouseEnter={handleRailEnter}
+        onMouseLeave={handleRailLeave}
+        className="group/rail absolute left-0 top-0 z-20 hidden h-full w-14 flex-col overflow-hidden border-r border-zinc-100/80 bg-zinc-50/80 backdrop-blur-sm transition-[width,box-shadow] duration-200 ease-out data-[expanded]:w-72 data-[expanded]:shadow-xl data-[expanded]:shadow-zinc-900/5 md:flex dark:border-zinc-800/70 dark:bg-zinc-950/80 dark:data-[expanded]:shadow-black/30"
+      >
+        <div className="space-y-2 px-2 pb-2 pt-3 group-data-[expanded]/rail:px-3">
           <button
             type="button"
             onClick={startNewChat}
             title="New chat"
-            className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-secondary px-2 text-[12.5px] font-medium text-white shadow-sm shadow-primary/30 transition-all hover:shadow-md hover:shadow-primary/40"
+            className="group/new inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-200/70 bg-white px-2 text-[12.5px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/60"
           >
             <MessageSquarePlus className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden whitespace-nowrap group-hover/rail:inline">
+            <span className="hidden whitespace-nowrap group-data-[expanded]/rail:inline">
               New chat
             </span>
           </button>
 
-          <div className="relative hidden group-hover/rail:block">
+          <div className="relative hidden group-data-[expanded]/rail:block">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search chats"
-              className="h-8 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-2.5 text-[12.5px] text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/30 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+              className="h-8 w-full rounded-lg border border-transparent bg-zinc-100/80 pl-8 pr-2.5 text-[12.5px] text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-zinc-300 focus:bg-white dark:bg-zinc-900/60 dark:text-zinc-100 dark:focus:border-zinc-700 dark:focus:bg-zinc-900"
             />
           </div>
         </div>
 
-        <div className="rail-scroll flex-1 overflow-y-auto px-1.5 pb-3 group-hover/rail:px-2">
+        <p className="hidden px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 group-data-[expanded]/rail:block dark:text-zinc-500">
+          Conversations
+        </p>
+
+        <div className="rail-scroll flex-1 overflow-y-auto px-1.5 pb-3 group-data-[expanded]/rail:px-2">
           {filtered.length === 0 ? (
-            <div className="mx-2 mt-4 hidden rounded-lg border border-dashed border-zinc-200 px-3 py-6 text-center text-[12px] text-zinc-500 group-hover/rail:block dark:border-zinc-800 dark:text-zinc-400">
+            <div className="mx-2 mt-4 hidden rounded-lg border border-dashed border-zinc-200 px-3 py-6 text-center text-[12px] text-zinc-500 group-data-[expanded]/rail:block dark:border-zinc-800 dark:text-zinc-400">
               {query
                 ? "No chats match that search."
                 : "No conversations yet. Start one with the button above."}
@@ -351,32 +388,37 @@ export default function ProposalsChat({
                       onClick={() => setActiveId(convo.id)}
                       title={convo.title}
                       className={cn(
-                        "group/item relative flex w-full items-center justify-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors group-hover/rail:items-start group-hover/rail:justify-start group-hover/rail:px-2.5",
+                        "group/item relative flex w-full items-center justify-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors group-data-[expanded]/rail:items-center group-data-[expanded]/rail:justify-start group-data-[expanded]/rail:gap-2.5 group-data-[expanded]/rail:px-2.5",
                         isActive
-                          ? "bg-white shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
-                          : "hover:bg-white/70 dark:hover:bg-zinc-900/60",
+                          ? "bg-zinc-200/60 text-zinc-900 dark:bg-zinc-800/70 dark:text-zinc-100"
+                          : "text-zinc-600 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/40",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-6 w-6 shrink-0 place-items-center rounded-md group-hover/rail:mt-0.5",
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors",
                           isActive
-                            ? "bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/30"
-                            : "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "bg-transparent text-zinc-400 dark:text-zinc-500",
                         )}
                       >
                         <FileText className="h-3 w-3" />
                       </span>
-                      <span className="hidden min-w-0 flex-1 group-hover/rail:block">
-                        <span className="block truncate text-[12.5px] font-medium text-zinc-800 dark:text-zinc-100">
+                      <span className="hidden min-w-0 flex-1 group-data-[expanded]/rail:block">
+                        <span
+                          className={cn(
+                            "block truncate text-[12.5px]",
+                            isActive ? "font-medium" : "font-normal",
+                          )}
+                        >
                           {convo.title}
                         </span>
                         <span className="mt-0.5 block truncate text-[11px] text-zinc-500 dark:text-zinc-400">
                           {convo.preview}
                         </span>
                       </span>
-                      <span className="ml-auto hidden shrink-0 flex-col items-end gap-1 group-hover/rail:flex">
-                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                      <span className="ml-auto hidden shrink-0 items-center gap-1.5 group-data-[expanded]/rail:flex">
+                        <span className="text-[10px] text-zinc-400 transition-opacity group-hover/item:opacity-0 dark:text-zinc-500">
                           {formatRelative(convo.updatedAt)}
                         </span>
                         <span
@@ -394,7 +436,7 @@ export default function ProposalsChat({
                               handleDelete(convo.id);
                             }
                           }}
-                          className="grid h-5 w-5 cursor-pointer place-items-center rounded text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-rose-500 group-hover/item:opacity-100 dark:hover:bg-zinc-800"
+                          className="absolute right-2 grid h-5 w-5 cursor-pointer place-items-center rounded text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-300/60 hover:text-rose-500 group-hover/item:opacity-100 dark:hover:bg-zinc-700/60"
                         >
                           <Trash2 className="h-3 w-3" />
                         </span>
@@ -406,33 +448,24 @@ export default function ProposalsChat({
             </ul>
           )}
         </div>
-
-        <div className="hidden border-t border-zinc-100 px-3 py-2.5 text-[10.5px] text-zinc-400 group-hover/rail:block dark:border-zinc-800 dark:text-zinc-500">
-          Chats sync to your workspace
-        </div>
       </aside>
 
       {/* Main chat */}
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3 dark:border-zinc-800">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/30">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                {active?.title ?? "Start a new conversation"}
-              </p>
-              <p className="line-clamp-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-                Drafting assistant for {workspaceName}
-              </p>
-            </div>
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100/80 px-6 py-4 dark:border-zinc-800/70">
+          <div className="min-w-0">
+            <p className="truncate text-[14.5px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
+              {active?.title ?? "New conversation"}
+            </p>
+            <p className="mt-0.5 line-clamp-1 text-[11.5px] text-zinc-500 dark:text-zinc-400">
+              {workspaceName}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={startNewChat}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[12px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white md:hidden"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white md:hidden"
             >
               <MessageSquarePlus className="h-3.5 w-3.5" />
               New
@@ -441,7 +474,7 @@ export default function ProposalsChat({
               type="button"
               onClick={() => setIsPdfOpen(true)}
               aria-label="Show PDF panel"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[12px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-900 lg:hidden dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-900 lg:hidden dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white"
             >
               <PanelRightOpen className="h-3.5 w-3.5" />
               PDF
@@ -459,7 +492,7 @@ export default function ProposalsChat({
               workspaceName={workspaceName}
             />
           ) : (
-            <ul className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <ul className="mx-auto flex w-full max-w-3xl flex-col gap-7 py-2">
               {active.messages.map((m) => (
                 <MessageRow
                   key={m.id}
@@ -482,30 +515,30 @@ export default function ProposalsChat({
 
         <form
           onSubmit={handleSubmit}
-          className="border-t border-zinc-100 px-3 pb-3 pt-3 dark:border-zinc-800 sm:px-6"
+          className="px-3 pb-5 pt-2 sm:px-6"
         >
           <div className="mx-auto w-full max-w-3xl">
-            <div className="flex items-end gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30 dark:border-zinc-800 dark:bg-zinc-950/40">
+            <div className="flex items-end gap-2 rounded-3xl border border-zinc-200/80 bg-white p-2.5 shadow-[0_4px_24px_-12px_rgba(24,24,27,0.08)] transition-all focus-within:border-zinc-300 focus-within:shadow-[0_8px_28px_-12px_rgba(24,24,27,0.14)] dark:border-zinc-800/80 dark:bg-zinc-900/60 dark:focus-within:border-zinc-700">
               <textarea
                 ref={textareaRef}
                 rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Describe the proposal you want to draft…"
-                className="max-h-[180px] min-h-[36px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[13.5px] leading-relaxed text-zinc-900 placeholder-zinc-400 outline-none dark:text-zinc-100"
+                placeholder="Message the proposal assistant…"
+                className="max-h-[200px] min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed text-zinc-900 placeholder-zinc-400 outline-none dark:text-zinc-100"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isThinking}
                 aria-label="Send"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/30 transition-all enabled:hover:shadow-md enabled:hover:shadow-primary/40 disabled:cursor-not-allowed disabled:opacity-40"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-zinc-900 text-white transition-all enabled:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:enabled:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600"
               >
-                <ArrowUp className="h-4 w-4" />
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
               </button>
             </div>
-            <p className="mt-1.5 px-1 text-[10.5px] text-zinc-400 dark:text-zinc-500">
-              Press Enter to send · Shift + Enter for newline · Ask &ldquo;generate the proposal PDF&rdquo; when ready
+            <p className="mt-2 text-center text-[10.5px] text-zinc-400 dark:text-zinc-500">
+              Enter to send · Shift + Enter for newline
             </p>
           </div>
         </form>
@@ -583,48 +616,39 @@ function MessageRow({
   userImage: string | null;
 }) {
   const isUser = message.role === "user";
-  return (
-    <li
-      className={cn(
-        "flex items-start gap-2.5",
-        isUser ? "flex-row-reverse" : "flex-row",
-      )}
-    >
-      {isUser ? (
-        userImage ? (
+
+  if (isUser) {
+    return (
+      <li className="flex items-start justify-end gap-3">
+        <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-zinc-100 px-4 py-2.5 text-[14px] leading-relaxed text-zinc-900 dark:bg-zinc-800/70 dark:text-zinc-100">
+          {message.content}
+        </div>
+        {userImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={userImage}
             alt=""
             referrerPolicy="no-referrer"
-            className="h-7 w-7 shrink-0 rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700"
+            className="h-7 w-7 shrink-0 rounded-full ring-1 ring-zinc-200 dark:ring-zinc-700"
           />
         ) : (
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-zinc-900 text-[11px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-zinc-900 text-[11px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
             {userInitial}
           </span>
-        )
-      ) : (
-        <span className="relative grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/20">
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent"
-          />
-          <Sparkles className="relative h-3.5 w-3.5" />
-        </span>
-      )}
-
-      <div
-        className={cn(
-          "max-w-[78%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
-          isUser
-            ? "rounded-tr-sm bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/25"
-            : "rounded-tl-sm border border-zinc-100 bg-zinc-50 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100",
         )}
-      >
-        {message.content}
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-start gap-3">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
+        <Sparkles className="h-3.5 w-3.5" />
+      </span>
+      <div className="min-w-0 flex-1 pt-1 text-[14px] leading-relaxed text-zinc-800 dark:text-zinc-100">
+        <div className="whitespace-pre-wrap">{message.content}</div>
         {message.proposal ? (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white/95 ring-1 ring-white/20 backdrop-blur dark:bg-zinc-900/40 dark:text-zinc-100">
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11.5px] font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
             <FileText className="h-3 w-3" />
             PDF rendered — see preview on the right
           </div>
@@ -636,20 +660,14 @@ function MessageRow({
 
 function ThinkingRow() {
   return (
-    <li className="flex items-start gap-2.5">
-      <span className="relative grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/20">
-        <span
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent"
-        />
-        <Sparkles className="relative h-3.5 w-3.5" />
+    <li className="flex items-start gap-3">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
+        <Sparkles className="h-3.5 w-3.5" />
       </span>
-      <div className="rounded-2xl rounded-tl-sm border border-zinc-100 bg-zinc-50 px-3.5 py-3 dark:border-zinc-800 dark:bg-zinc-950/60">
-        <span className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:-0.3s] dark:bg-zinc-500" />
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:-0.15s] dark:bg-zinc-500" />
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 dark:bg-zinc-500" />
-        </span>
+      <div className="flex items-center gap-1 pt-3">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:-0.3s] dark:bg-zinc-500" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:-0.15s] dark:bg-zinc-500" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 dark:bg-zinc-500" />
       </div>
     </li>
   );
@@ -663,35 +681,24 @@ function EmptyState({
   workspaceName: string;
 }) {
   return (
-    <div className="mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-center px-2 py-6 text-center">
-      <span className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-secondary text-white shadow-md shadow-primary/30">
-        <span
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"
-        />
-        <Sparkles className="relative h-6 w-6" />
-      </span>
-      <h2 className="mt-4 text-[18px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+    <div className="mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-center px-4 py-12 text-center">
+      <h2 className="text-[28px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
         Draft a proposal for {workspaceName}
       </h2>
-      <p className="mt-1.5 max-w-md text-[12.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-        Describe the client, scope, and budget. When you&rsquo;re ready, ask the
-        assistant to <em>generate the proposal PDF</em> and it&rsquo;ll render
-        in the panel on the right.
+      <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+        Describe the client, scope, and budget. Ask the assistant to generate
+        the PDF when you&rsquo;re ready.
       </p>
 
-      <div className="mt-6 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-10 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
         {suggestionPrompts.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => onSuggestion(s)}
-            className="group rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[12.5px] text-zinc-700 transition-all hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700"
+            className="rounded-2xl border border-zinc-200/70 bg-white px-4 py-3.5 text-left text-[13px] leading-relaxed text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-950/40 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900/50"
           >
-            <span className="flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-              <span>{s}</span>
-            </span>
+            {s}
           </button>
         ))}
       </div>

@@ -91,11 +91,11 @@ body {
   display: none;
 }
 
-.group\/rail:hover .rail-scroll {
+.group\/rail[data-expanded] .rail-scroll {
   scrollbar-width: thin;
 }
 
-.group\/rail:hover .rail-scroll::-webkit-scrollbar {
+.group\/rail[data-expanded] .rail-scroll::-webkit-scrollbar {
   width: 10px;
   height: 10px;
   display: block;

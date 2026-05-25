@@ -1,5 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 import {
+  Building2,
   ClipboardCheck,
   ClipboardList,
   CreditCard,
@@ -87,5 +88,12 @@ export const navSections: NavSection[] = [
     heading: "HR & Payroll",
     items: [{ href: "/employees", label: "Employees", icon: IdCard }],
     restrictedTo: ["owner", "admin", "hr"],
+  },
+  {
+    heading: "Workspace Settings",
+    items: [
+      { href: "/company-details", label: "Company Details", icon: Building2 },
+    ],
+    restrictedTo: ["owner", "admin"],
   },
 ];

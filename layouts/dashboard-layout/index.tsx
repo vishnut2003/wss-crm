@@ -4,6 +4,7 @@ import type { UserRole } from "@/lib/user";
 import { cn } from "@/lib/cn";
 import Header from "./header";
 import Sidebar from "./sidebar";
+import type { NavConfig } from "./nav";
 
 type DashboardLayoutProps = {
   user: {
@@ -17,6 +18,10 @@ type DashboardLayoutProps = {
     color: WorkspaceColor;
     role: UserRole;
   };
+  // Override the default workspace sidebar menu — e.g. the project-scoped menu
+  // shown while viewing a single project. Plain/serializable so it can cross
+  // the Server → Client boundary into the sidebar components.
+  nav?: NavConfig;
   compactSidebar?: boolean;
   fullBleed?: boolean;
   children: ReactNode;
@@ -25,6 +30,7 @@ type DashboardLayoutProps = {
 export default function DashboardLayout({
   user,
   workspace,
+  nav,
   compactSidebar = false,
   fullBleed = false,
   children,
@@ -38,12 +44,13 @@ export default function DashboardLayout({
           : "min-h-screen flex-1",
       )}
     >
-      <Header user={user} workspace={workspace} />
+      <Header user={user} workspace={workspace} nav={nav} />
       <div className={cn("flex flex-1", fullBleed && "min-h-0")}>
         <Sidebar
           workspaceId={workspace.id}
           role={workspace.role}
           compact={compactSidebar}
+          nav={nav}
         />
         <main
           className={cn(

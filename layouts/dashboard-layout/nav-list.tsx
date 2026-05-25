@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import type { UserRole } from "@/lib/user";
-import { navSections, type NavItem } from "./nav";
+import { resolveNavSections, type NavConfig, type NavItem } from "./nav";
 
 export default function NavList({
   workspaceId,
@@ -12,18 +12,25 @@ export default function NavList({
   query = "",
   onNavigate,
   compact = false,
+  nav,
 }: {
   workspaceId: string;
   role: UserRole;
   query?: string;
   onNavigate?: () => void;
   compact?: boolean;
+  nav?: NavConfig;
 }) {
   const pathname = usePathname();
   const base = `/workspace/${workspaceId}`;
   const normalized = query.trim().toLowerCase();
 
-  const visibleSections = navSections.filter(
+  // Slide the menu in only when entering a project. NavList stays mounted while
+  // navigating between project sub-pages (shared layout), so the animation
+  // fires once on entry rather than on every click.
+  const animated = nav?.type === "project";
+
+  const visibleSections = resolveNavSections(nav).filter(
     (section) => !section.restrictedTo || section.restrictedTo.includes(role),
   );
 
@@ -38,12 +45,13 @@ export default function NavList({
         .filter((section) => section.items.length > 0)
     : visibleSections;
 
-  const renderItem = (item: NavItem) => {
+  const renderItem = (item: NavItem, animIndex: number) => {
     const isRoot = item.href === "" || item.href === "/";
     const href = isRoot ? base : base + item.href;
-    const isActive = isRoot
-      ? pathname === href
-      : pathname === href || pathname.startsWith(href + "/");
+    const isActive =
+      isRoot || item.exact
+        ? pathname === href
+        : pathname === href || pathname.startsWith(href + "/");
     const Icon = item.icon;
 
     return (
@@ -53,6 +61,11 @@ export default function NavList({
         onClick={onNavigate}
         aria-current={isActive ? "page" : undefined}
         title={compact ? item.label : undefined}
+        style={
+          animated
+            ? { animationDelay: `${animIndex * 45}ms`, animationFillMode: "both" }
+            : undefined
+        }
         className={cn(
           "group relative flex items-center rounded-lg transition-all",
           compact
@@ -61,6 +74,8 @@ export default function NavList({
           isActive
             ? "bg-gradient-to-r from-primary/[0.08] via-primary/[0.03] to-transparent dark:from-primary/[0.14] dark:via-primary/[0.05]"
             : "hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40",
+          animated &&
+            "duration-300 ease-out animate-in fade-in-0 slide-in-from-left-4 motion-reduce:animate-none",
         )}
       >
         {isActive && !compact ? (
@@ -134,6 +149,14 @@ export default function NavList({
     );
   }
 
+  // Item count before each section, so the slide-in cascades item-to-item
+  // across section boundaries (computed without mutation for the React rules).
+  const sectionStarts = filteredSections.map((_, i) =>
+    filteredSections
+      .slice(0, i)
+      .reduce((sum, s) => sum + s.items.length, 0),
+  );
+
   return (
     <>
       {filteredSections.map((section, index) => (
@@ -151,7 +174,11 @@ export default function NavList({
               {section.heading}
             </p>
           )}
-          <nav className="space-y-0.5">{section.items.map(renderItem)}</nav>
+          <nav className="space-y-0.5">
+            {section.items.map((item, i) =>
+              renderItem(item, sectionStarts[index] + i),
+            )}
+          </nav>
         </div>
       ))}
     </>

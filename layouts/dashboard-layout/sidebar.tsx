@@ -5,15 +5,18 @@ import { Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { UserRole } from "@/lib/user";
 import NavList from "./nav-list";
+import type { NavConfig } from "./nav";
 
 export default function Sidebar({
   workspaceId,
   role,
   compact = false,
+  nav,
 }: {
   workspaceId: string;
   role: UserRole;
   compact?: boolean;
+  nav?: NavConfig;
 }) {
   const [query, setQuery] = useState("");
 
@@ -57,6 +60,7 @@ export default function Sidebar({
           role={role}
           query={query}
           compact={compact}
+          nav={nav}
         />
       </div>
 

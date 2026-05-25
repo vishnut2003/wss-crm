@@ -6,15 +6,18 @@ import { Menu, Search, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { UserRole } from "@/lib/user";
 import NavList from "./nav-list";
+import type { NavConfig } from "./nav";
 
 const subscribe = () => () => {};
 
 export default function MobileSidebar({
   workspaceId,
   role,
+  nav,
 }: {
   workspaceId: string;
   role: UserRole;
+  nav?: NavConfig;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -105,6 +108,7 @@ export default function MobileSidebar({
             workspaceId={workspaceId}
             role={role}
             query={query}
+            nav={nav}
             onNavigate={() => {
               setOpen(false);
               setQuery("");

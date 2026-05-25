@@ -5,6 +5,7 @@ import type { WorkspaceColor } from "@/lib/workspace";
 import type { UserRole } from "@/lib/user";
 import MobileSidebar from "./mobile-sidebar";
 import LogoutButton from "./logout-button";
+import type { NavConfig } from "./nav";
 
 const swatch: Record<WorkspaceColor, string> = {
   violet: "bg-gradient-to-br from-violet-500 to-purple-700",
@@ -27,9 +28,10 @@ type HeaderProps = {
     color: WorkspaceColor;
     role: UserRole;
   };
+  nav?: NavConfig;
 };
 
-export default function Header({ user, workspace }: HeaderProps) {
+export default function Header({ user, workspace, nav }: HeaderProps) {
   const initial = workspace.name.charAt(0).toUpperCase();
   const userInitial = (user.name ?? user.email ?? "?").charAt(0).toUpperCase();
 
@@ -41,7 +43,11 @@ export default function Header({ user, workspace }: HeaderProps) {
       />
       <div className="flex h-full items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <MobileSidebar workspaceId={workspace.id} role={workspace.role} />
+          <MobileSidebar
+            workspaceId={workspace.id}
+            role={workspace.role}
+            nav={nav}
+          />
           <Link
             href="/"
             className="flex shrink-0 items-baseline text-[15px] font-bold tracking-tight"

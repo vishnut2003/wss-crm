@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArrowUpRight,
   Building2,
@@ -93,13 +94,21 @@ function initials(name: string): string {
   );
 }
 
-export default function ProjectCard({ project }: { project: ProjectCardData }) {
+export default function ProjectCard({
+  project,
+  href,
+}: {
+  project: ProjectCardData;
+  href: string;
+}) {
   const visibleTeam = project.team.slice(0, 4);
   const extraTeam = Math.max(0, project.team.length - visibleTeam.length);
   const progress = progressPercent(project.startDate, project.endDate);
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 pt-[22px] transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_18px_38px_-18px_rgba(24,24,27,0.22)] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+    <Link
+      href={href}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 pt-[22px] transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_18px_38px_-18px_rgba(24,24,27,0.22)] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
       {/* Status stripe */}
       <span
         aria-hidden
@@ -236,6 +245,6 @@ export default function ProjectCard({ project }: { project: ProjectCardData }) {
           <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       </div>
-    </article>
+    </Link>
   );
 }

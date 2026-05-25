@@ -6,12 +6,16 @@ import {
   CreditCard,
   FileSpreadsheet,
   FileText,
+  Flag,
   FolderKanban,
+  FolderOpen,
   IdCard,
   LayoutDashboardIcon,
+  ListTodo,
   Receipt,
   ReceiptText,
   RotateCcw,
+  Settings,
   ShoppingCart,
   UserPlus,
   Users,
@@ -23,6 +27,10 @@ export type NavItem = {
   label: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   badge?: string;
+  // When true the item is only highlighted on an exact pathname match, not for
+  // descendant routes. Used for "overview"-style links that share a prefix with
+  // their siblings (e.g. a project root vs. its sub-pages).
+  exact?: boolean;
 };
 
 export type NavSection = {
@@ -97,3 +105,49 @@ export const navSections: NavSection[] = [
     restrictedTo: ["owner", "admin"],
   },
 ];
+
+// Serializable description of which sidebar menu to show. Server Components
+// pass this (a plain object) across the client boundary — the icon-bearing
+// NavSection[] is built on the client via `resolveNavSections`, since React
+// components can't be passed as props from a Server Component.
+export type NavConfig =
+  | { type: "workspace" }
+  | { type: "project"; projectId: string };
+
+export function resolveNavSections(nav?: NavConfig): NavSection[] {
+  if (nav?.type === "project") return projectNavSections(nav.projectId);
+  return navSections;
+}
+
+// Sidebar menu shown while viewing a single project. Item hrefs are relative
+// to the workspace base (NavList prepends `/workspace/{id}`), so each one
+// points at `/projects/{projectId}/...`.
+export function projectNavSections(projectId: string): NavSection[] {
+  const base = `/projects/${projectId}`;
+  return [
+    {
+      heading: "Project",
+      items: [
+        { href: base, label: "Overview", icon: LayoutDashboardIcon, exact: true },
+        { href: `${base}/tasks`, label: "Tasks", icon: ListTodo },
+        { href: `${base}/milestones`, label: "Milestones", icon: Flag },
+        { href: `${base}/files`, label: "Files", icon: FolderOpen },
+        { href: `${base}/team`, label: "Team", icon: Users },
+        { href: `${base}/settings`, label: "Settings", icon: Settings },
+      ],
+    },
+    {
+      heading: "Workspace",
+      items: [
+        {
+          href: "/projects",
+          label: "Back to Projects",
+          icon: FolderKanban,
+          // Without this it'd match every /projects/* descendant (i.e. the
+          // project pages it lives on) and stay perpetually highlighted.
+          exact: true,
+        },
+      ],
+    },
+  ];
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
@@ -83,6 +83,18 @@ export default function AddProjectButton({
 
   const [state, setState] = useState<ProjectActionState>(INITIAL_STATE);
   const [pending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // The Team section's cmdk <Command> auto-scrolls its selected item into view
+  // on mount, which drags this scrollable form to the bottom. Snap back to the
+  // top once the dialog opens, after cmdk's mount scroll has run.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      formRef.current?.scrollTo({ top: 0 });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -224,6 +236,7 @@ export default function AddProjectButton({
         </div>
 
         <form
+          ref={formRef}
           action={formAction}
           className="max-h-[calc(92vh-12rem)] overflow-y-auto px-6 pb-6 pt-5"
         >

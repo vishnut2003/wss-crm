@@ -17,6 +17,7 @@ import {
   RotateCcw,
   Settings,
   ShoppingCart,
+  Truck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -89,6 +90,7 @@ export const navSections: NavSection[] = [
         icon: ShoppingCart,
       },
       { href: "/payments", label: "Payments", icon: CreditCard },
+      { href: "/vendors", label: "Vendors", icon: Truck },
     ],
     restrictedTo: ["owner", "admin", "sales_manager", "accounts"],
   },

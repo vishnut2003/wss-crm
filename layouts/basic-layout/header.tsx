@@ -1,12 +1,13 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Logo from "@/components/logo";
 import { buttonClasses } from "@/components/button";
 import { ArrowRight } from "lucide-react";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it works" },
+  { href: "#modules", label: "Modules" },
+  { href: "#roles", label: "Roles" },
   { href: "#pricing", label: "Pricing" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export default function Header() {
@@ -16,7 +17,7 @@ export default function Header() {
         <Link href="/" className="group relative flex items-center gap-2.5">
           <span
             aria-hidden
-            className="pointer-events-none absolute -left-3 -top-2 -z-10 h-10 w-20 rounded-full bg-gradient-to-r from-primary/30 to-secondary/30 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+            className="pointer-events-none absolute -left-3 -top-2 -z-10 h-10 w-20 rounded-full bg-linear-to-r from-primary/30 to-secondary/30 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
           />
           <Logo />
           <span className="hidden rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary sm:inline-block">
@@ -34,7 +35,7 @@ export default function Header() {
               {link.label}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-3 -bottom-0.5 h-0.5 origin-center scale-x-0 rounded-full bg-gradient-to-r from-primary to-secondary opacity-0 transition-all duration-300 group-hover:scale-x-100 group-hover:opacity-100"
+                className="pointer-events-none absolute inset-x-3 -bottom-0.5 h-0.5 origin-center scale-x-0 rounded-full bg-linear-to-r from-primary to-secondary opacity-0 transition-all duration-300 group-hover:scale-x-100 group-hover:opacity-100"
               />
             </a>
           ))}
@@ -63,7 +64,7 @@ export default function Header() {
 
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
       />
     </header>
   );

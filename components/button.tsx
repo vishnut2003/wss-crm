@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+﻿import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -9,7 +9,7 @@ const base =
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-r from-primary to-secondary text-white shadow-sm shadow-primary/25 hover:shadow-md hover:shadow-primary/35",
+    "bg-linear-to-r from-primary to-secondary text-white shadow-sm shadow-primary/25 hover:shadow-md hover:shadow-primary/35",
   secondary:
     "border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/70",
   ghost:

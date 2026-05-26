@@ -80,7 +80,7 @@ export default function Footer() {
     <footer className="relative border-t border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-950">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
       />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-16">
@@ -152,7 +152,7 @@ export default function Footer() {
 
       <div className="border-t border-zinc-200 dark:border-zinc-800">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-zinc-500 sm:flex-row dark:text-zinc-500">
-          <p>© {new Date().getFullYear()} Web Spider Solutions. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Web Spider Solutions. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-300">
               Privacy

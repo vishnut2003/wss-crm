@@ -64,7 +64,7 @@ export default function HowItWorks() {
       />
 
       <div className="mx-auto w-full max-w-6xl px-6">
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Getting started</Eyebrow>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             From signup to your first deal in under a minute.
@@ -124,7 +124,7 @@ function SignupVisual() {
         <span className="text-zinc-900 dark:text-zinc-100">you@acme.co</span>
         <span className="ml-px h-3.5 w-px animate-pulse bg-primary" />
       </div>
-      <div className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-md bg-gradient-to-r from-primary to-secondary px-3 text-[11px] font-medium text-white">
+      <div className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-md bg-linear-to-r from-primary to-secondary px-3 text-[11px] font-medium text-white">
         Continue
         <ArrowRight className="h-3 w-3" />
       </div>

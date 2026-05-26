@@ -15,8 +15,10 @@ export function canManageIntegrations(role: UserRole): boolean {
   return INTEGRATION_MANAGER_ROLES.includes(role);
 }
 
+// Google Ads' Lead Form webhook key field accepts up to 50 chars. 25 random
+// bytes hex-encoded fits exactly and still gives ~200 bits of entropy.
 export function generateWebhookKey(): string {
-  return crypto.randomBytes(32).toString("hex");
+  return crypto.randomBytes(25).toString("hex");
 }
 
 export function generateNonce(bytes = 16): string {

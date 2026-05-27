@@ -74,19 +74,22 @@ export default function Hero() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_30%,transparent_80%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]"
       />
 
-      <div className="mx-auto w-full max-w-6xl px-6 pb-24 pt-20 sm:pt-28">
+      <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-14 sm:pb-24 sm:pt-28">
         <div className="mx-auto max-w-3xl text-center">
           <a
             href="#modules"
-            className="group inline-flex items-center gap-3 rounded-full border border-zinc-200 bg-white/80 py-1 pl-1 pr-4 text-xs text-zinc-700 backdrop-blur transition-colors hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            className="group inline-flex max-w-full items-center gap-2 rounded-full border border-zinc-200 bg-white/80 py-1 pl-1 pr-3 text-xs text-zinc-700 backdrop-blur transition-colors hover:bg-white sm:gap-3 sm:pr-4 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
           >
-            <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary to-secondary px-2.5 py-0.5 text-[11px] font-semibold text-white">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-linear-to-r from-primary to-secondary px-2.5 py-0.5 text-[11px] font-semibold text-white">
               <Sparkles className="h-3 w-3" />
               New
             </span>
-            <span>AI Proposals are live — draft a quote in seconds</span>
+            <span className="truncate">
+              AI Proposals are live
+              <span className="hidden sm:inline"> — draft a quote in seconds</span>
+            </span>
             <svg
-              className="h-3 w-3 text-zinc-400 transition-transform group-hover:translate-x-0.5"
+              className="h-3 w-3 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5"
               viewBox="0 0 12 12"
               fill="none"
               stroke="currentColor"
@@ -99,7 +102,7 @@ export default function Hero() {
             </svg>
           </a>
 
-          <h1 className="mt-8 text-balance text-5xl font-semibold tracking-tight text-zinc-900 sm:text-6xl lg:text-[5rem] lg:leading-[1.05] dark:text-white">
+          <h1 className="mt-6 text-balance text-[2.5rem] leading-[1.1] font-semibold tracking-tight text-zinc-900 sm:mt-8 sm:text-6xl sm:leading-tight lg:text-[5rem] lg:leading-[1.05] dark:text-white">
             One workspace for{" "}
             <span className="relative inline-block">
               <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -113,12 +116,12 @@ export default function Hero() {
             &amp; accounts.
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+          <p className="mx-auto mt-5 max-w-2xl text-balance text-base leading-7 text-zinc-600 sm:mt-6 sm:text-lg sm:leading-8 dark:text-zinc-400">
             WSS CRM unifies your customers, deals, proposals, projects, vouchers,
             and team — in a single workspace your whole company can use.
           </p>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row">
             <Link
               href="/signup"
               className={buttonClasses({
@@ -159,7 +162,7 @@ export default function Hero() {
           </ul>
         </div>
 
-        <div className="relative mx-auto mt-20 max-w-5xl">
+        <div className="relative mx-auto mt-14 max-w-5xl sm:mt-20">
           <div
             aria-hidden
             className="pointer-events-none absolute -inset-6 -z-10 rounded-3xl bg-linear-to-br from-primary/20 via-transparent to-secondary/20 blur-2xl"
@@ -295,7 +298,7 @@ export default function Hero() {
           />
         </div>
 
-        <div className="mt-20">
+        <div className="mt-14 sm:mt-20">
           <p className="text-center text-xs font-medium uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
             Trusted by teams at
           </p>

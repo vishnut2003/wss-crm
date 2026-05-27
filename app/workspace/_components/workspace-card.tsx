@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Lock } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/time";
-import type { WorkspaceColor } from "@/lib/workspace";
+import {
+  isWorkspaceAccessible,
+  WORKSPACE_STATUS_BADGE_CLASS,
+  WORKSPACE_STATUS_LABEL,
+  type WorkspaceColor,
+  type WorkspaceStatus,
+} from "@/lib/workspace";
 import { ROLE_BADGE_CLASS, ROLE_LABEL, type UserRole } from "@/lib/user";
 
 const swatch: Record<WorkspaceColor, string> = {
@@ -36,6 +42,7 @@ export type WorkspaceCardData = {
   id: string;
   name: string;
   color: WorkspaceColor;
+  status: WorkspaceStatus;
   memberCount: number;
   role: UserRole;
   updatedAt: string;
@@ -47,12 +54,10 @@ export default function WorkspaceCard({
   workspace: WorkspaceCardData;
 }) {
   const initial = workspace.name.charAt(0).toUpperCase();
+  const accessible = isWorkspaceAccessible(workspace.status);
 
-  return (
-    <Link
-      href={`/workspace/${workspace.id}`}
-      className="group relative -mx-2 flex items-center gap-3.5 rounded-xl px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
-    >
+  const inner = (
+    <>
       <span
         aria-hidden
         className={cn(
@@ -66,6 +71,7 @@ export default function WorkspaceCard({
           "relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg text-[15px] font-semibold text-white shadow-sm shadow-black/10 transition-shadow group-hover:shadow-lg",
           swatch[workspace.color],
           avatarGlow[workspace.color],
+          !accessible && "opacity-50 saturate-50",
         )}
       >
         <span
@@ -81,19 +87,35 @@ export default function WorkspaceCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[14px] font-semibold text-zinc-900 dark:text-zinc-100">
+          <p
+            className={cn(
+              "truncate text-[14px] font-semibold",
+              accessible
+                ? "text-zinc-900 dark:text-zinc-100"
+                : "text-zinc-500 dark:text-zinc-400",
+            )}
+          >
             {workspace.name}
           </p>
           <span
             className={cn(
               "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+              WORKSPACE_STATUS_BADGE_CLASS[workspace.status],
+            )}
+          >
+            {WORKSPACE_STATUS_LABEL[workspace.status]}
+          </span>
+        </div>
+        <p className="mt-1 truncate text-[12px] text-zinc-500 dark:text-zinc-400">
+          <span
+            className={cn(
+              "shrink-0 rounded px-1 py-0.5 text-[10px] font-medium uppercase tracking-wider",
               ROLE_BADGE_CLASS[workspace.role],
             )}
           >
             {ROLE_LABEL[workspace.role]}
           </span>
-        </div>
-        <p className="mt-1 truncate text-[12px] text-zinc-500 dark:text-zinc-400">
+          <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">·</span>
           <span className="tabular-nums">{workspace.memberCount}</span>{" "}
           {workspace.memberCount === 1 ? "member" : "members"}
           <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">·</span>
@@ -103,10 +125,42 @@ export default function WorkspaceCard({
 
       <span
         aria-hidden
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-transparent text-zinc-300 transition-all group-hover:translate-x-0 group-hover:border-zinc-200 group-hover:bg-white group-hover:text-zinc-900 group-hover:shadow-sm dark:text-zinc-600 dark:group-hover:border-zinc-700 dark:group-hover:bg-zinc-800 dark:group-hover:text-zinc-100"
+        className={cn(
+          "grid h-7 w-7 shrink-0 place-items-center rounded-md border border-transparent text-zinc-300 transition-all dark:text-zinc-600",
+          accessible &&
+            "group-hover:translate-x-0 group-hover:border-zinc-200 group-hover:bg-white group-hover:text-zinc-900 group-hover:shadow-sm dark:group-hover:border-zinc-700 dark:group-hover:bg-zinc-800 dark:group-hover:text-zinc-100",
+        )}
       >
-        <ChevronRight className="h-3.5 w-3.5" />
+        {accessible ? (
+          <ChevronRight className="h-3.5 w-3.5" />
+        ) : (
+          <Lock className="h-3.5 w-3.5" />
+        )}
       </span>
+    </>
+  );
+
+  if (!accessible) {
+    return (
+      <div
+        title={
+          workspace.status === "in_review"
+            ? "Pending admin approval"
+            : `Workspace ${WORKSPACE_STATUS_LABEL[workspace.status].toLowerCase()}`
+        }
+        className="group relative -mx-2 flex cursor-default items-center gap-3.5 rounded-xl px-3 py-3"
+      >
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/workspace/${workspace.id}`}
+      className="group relative -mx-2 flex items-center gap-3.5 rounded-xl px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
+    >
+      {inner}
     </Link>
   );
 }

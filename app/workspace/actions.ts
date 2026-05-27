@@ -46,6 +46,7 @@ export async function createWorkspace(
     await Workspace.create({
       name,
       color,
+      status: "in_review",
       owner: session.user.id,
       members: [{ user: session.user.id, role: "owner" }],
     });

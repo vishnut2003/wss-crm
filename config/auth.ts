@@ -13,6 +13,10 @@ class WrongProviderError extends CredentialsSignin {
   code = "wrong_provider";
 }
 
+class AccountDisabledError extends CredentialsSignin {
+  code = "account_disabled";
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: {
@@ -45,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         await connectDB();
         const user = await User.findOne({ email }).select(
-          "+password name email role providers",
+          "+password name email role providers disabled",
         );
         if (!user) throw new InvalidCredentialsError();
 
@@ -55,6 +59,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) throw new InvalidCredentialsError();
+
+        if (user.disabled) throw new AccountDisabledError();
 
         return {
           id: user.id,
@@ -87,6 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           googleId: account.providerAccountId,
         });
       } else {
+        if (dbUser.disabled) return false;
         let dirty = false;
         if (!dbUser.providers.includes("google")) {
           dbUser.providers.push("google");

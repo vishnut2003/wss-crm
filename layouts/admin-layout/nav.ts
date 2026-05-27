@@ -1,5 +1,9 @@
 import type { ComponentType, SVGProps } from "react";
-import { LayoutDashboardIcon } from "lucide-react";
+import {
+  Building2Icon,
+  LayoutDashboardIcon,
+  UsersIcon,
+} from "lucide-react";
 
 export type NavItem = {
   // Absolute path. Active when pathname matches exactly or is a descendant —
@@ -20,13 +24,28 @@ export type NavSection = {
 // Single-section nav for now. New admin sub-pages get added here.
 export const navSections: NavSection[] = [
   {
-    heading: "Admin",
+    heading: "Overview",
     items: [
       {
         href: "/admin",
         label: "Dashboard",
         icon: LayoutDashboardIcon,
         exact: true,
+      },
+    ]
+  },
+  {
+    heading: "Management",
+    items: [
+      {
+        href: "/admin/users",
+        label: "Users",
+        icon: UsersIcon,
+      },
+      {
+        href: "/admin/workspaces",
+        label: "Workspaces",
+        icon: Building2Icon,
       },
     ],
   },

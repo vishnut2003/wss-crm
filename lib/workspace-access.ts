@@ -5,7 +5,11 @@ import { auth } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
 import type { UserRole } from "@/lib/user";
-import type { WorkspaceColor } from "@/lib/workspace";
+import {
+  isWorkspaceAccessible,
+  type WorkspaceColor,
+  type WorkspaceStatus,
+} from "@/lib/workspace";
 
 export type WorkspaceMember = {
   user: Types.ObjectId;
@@ -17,6 +21,7 @@ export type LeanWorkspace = {
   name: string;
   description?: string;
   color: WorkspaceColor;
+  status?: WorkspaceStatus;
   owner: Types.ObjectId;
   members: WorkspaceMember[];
   createdAt: Date;
@@ -70,6 +75,10 @@ export async function requireWorkspaceAccess({
   }).lean()) as LeanWorkspace | null;
 
   if (!workspace) notFound();
+
+  // Only active workspaces are usable. In-review / rejected / suspended ones
+  // bounce back to the picker, where the owner can see the pending status.
+  if (!isWorkspaceAccessible(workspace.status)) redirect("/workspace");
 
   const role = getActorRole(workspace, session.user.id);
 

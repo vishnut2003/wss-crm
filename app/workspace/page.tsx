@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
-import type { WorkspaceColor } from "@/lib/workspace";
+import type { WorkspaceColor, WorkspaceStatus } from "@/lib/workspace";
 import type { UserRole } from "@/models/user";
 import { LogOut } from "lucide-react";
 import WorkspaceCard, {
@@ -34,6 +34,7 @@ async function getWorkspaces(userId: string): Promise<WorkspaceCardData[]> {
       id: String(w._id),
       name: w.name,
       color: w.color as WorkspaceColor,
+      status: (w.status as WorkspaceStatus | undefined) ?? "active",
       memberCount: w.members?.length ?? 0,
       role,
       updatedAt: (w.updatedAt as Date).toISOString(),

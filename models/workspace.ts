@@ -1,5 +1,5 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
-import { WORKSPACE_COLORS } from "@/lib/workspace";
+import { WORKSPACE_COLORS, WORKSPACE_STATUSES } from "@/lib/workspace";
 import { USER_ROLES } from "@/models/user";
 
 const memberSchema = new Schema(
@@ -29,6 +29,13 @@ const workspaceSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: WORKSPACE_STATUSES,
+      required: true,
+      default: "active",
       index: true,
     },
     members: { type: [memberSchema], required: true, default: [] },

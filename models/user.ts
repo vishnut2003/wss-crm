@@ -38,6 +38,7 @@ const userSchema = new Schema(
       default: "owner",
     },
     emailVerified: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false },
     providers: {
       type: [{ type: String, enum: AUTH_PROVIDERS }],
       required: true,

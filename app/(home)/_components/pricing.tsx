@@ -6,57 +6,49 @@ import { ArrowRight, Check, Sparkles } from "lucide-react";
 type Plan = {
   name: string;
   price: string;
-  cadence?: string;
+  unit: string;
+  billing: string;
   description: string;
   cta: { label: string; href: string };
-  features: string[];
   highlighted?: boolean;
   badge?: string;
 };
 
+// Every plan unlocks the entire platform — billing cadence is the only
+// difference. Keep this list in sync with the workspace modules.
+const features: string[] = [
+  "Customers & CRM with full activity history",
+  "Leads & drag-and-drop pipeline",
+  "AI Proposals & Quotations with PDF export",
+  "Projects, tasks, milestones & calendar",
+  "Sales orders, invoices, receipts & payments",
+  "Purchase orders, invoices & vendors",
+  "Payment recovery tracking",
+  "HR & employee management",
+  "8 built-in roles with granular access",
+  "Multiple isolated workspaces",
+  "Audit log on every voucher",
+  "Priority support",
+];
+
 const plans: Plan[] = [
   {
-    name: "Starter",
-    price: "$0",
-    cadence: "during beta",
-    description: "Everything you need to run your first workspace.",
+    name: "Annual",
+    price: "₹200",
+    unit: "/ user / month",
+    billing: "Billed annually (₹2,400 per user / year)",
+    description: "Complete access to every feature — at our best price.",
     cta: { label: "Get started", href: "/signup" },
-    features: [
-      "1 workspace",
-      "Up to 5 teammates",
-      "CRM, Pipeline & Projects",
-      "Sales orders & invoices",
-      "Email support",
-    ],
-  },
-  {
-    name: "Team",
-    price: "$0",
-    cadence: "during beta",
-    description: "Everything in Starter, plus AI and unlimited team members.",
-    cta: { label: "Start free", href: "/signup" },
-    badge: "Most popular",
+    badge: "Save 33%",
     highlighted: true,
-    features: [
-      "Unlimited teammates",
-      "AI Proposals & Quotations",
-      "All 6 product modules",
-      "Role-based access (8 roles)",
-      "Audit log & priority support",
-    ],
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    description: "For larger orgs with custom rollouts and security needs.",
-    cta: { label: "Contact sales", href: "/signup" },
-    features: [
-      "Multiple workspaces",
-      "SSO / SAML",
-      "Custom roles & permissions",
-      "Dedicated onboarding",
-      "99.9% uptime SLA",
-    ],
+    name: "Monthly",
+    price: "₹300",
+    unit: "/ user / month",
+    billing: "Billed monthly — cancel anytime",
+    description: "Complete access to every feature, with no commitment.",
+    cta: { label: "Get started", href: "/signup" },
   },
 ];
 
@@ -75,15 +67,15 @@ export default function Pricing() {
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Pricing</Eyebrow>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-            Simple pricing. No per-seat surprises.
+            One price. Every feature.
           </h2>
           <p className="mt-4 text-balance text-zinc-600 dark:text-zinc-400">
-            Free during beta &mdash; for everyone. Pick the plan that fits when
-            we launch, or stay on Starter forever.
+            No tiers, no locked modules. Both plans include the entire platform
+            for every user &mdash; pay monthly, or save 33% with annual billing.
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
           {plans.map((p) => (
             <div
               key={p.name}
@@ -116,11 +108,13 @@ export default function Pricing() {
                 <span className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-white">
                   {p.price}
                 </span>
-                {p.cadence ? (
-                  <span className="pb-1 text-xs text-zinc-500 dark:text-zinc-500">
-                    {p.cadence}
-                  </span>
-                ) : null}
+                <span className="pb-1 text-xs text-zinc-500 dark:text-zinc-500">
+                  {p.unit}
+                </span>
+              </p>
+
+              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+                {p.billing}
               </p>
 
               <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -139,8 +133,11 @@ export default function Pricing() {
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
 
-              <ul className="mt-7 space-y-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-                {p.features.map((f) => (
+              <p className="mt-7 border-t border-zinc-200 pt-6 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
+                Everything included
+              </p>
+              <ul className="mt-4 space-y-3">
+                {features.map((f) => (
                   <li
                     key={f}
                     className="flex items-start gap-2.5 text-sm text-zinc-700 dark:text-zinc-300"
@@ -157,7 +154,8 @@ export default function Pricing() {
         </div>
 
         <p className="mt-10 text-center text-xs text-zinc-500 dark:text-zinc-500">
-          Prices in USD. No card required to start. Cancel anytime.
+          Prices in INR (₹), per user, per month, exclusive of taxes. Cancel
+          anytime.
         </p>
       </div>
     </section>

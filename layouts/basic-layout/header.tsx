@@ -2,6 +2,9 @@
 import Logo from "@/components/logo";
 import { buttonClasses } from "@/components/button";
 import { ArrowRight } from "lucide-react";
+import { auth, signOut } from "@/config/auth";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import UserMenu from "./user-menu";
 
 const navLinks = [
   { href: "#modules", label: "Modules" },
@@ -10,7 +13,10 @@ const navLinks = [
   { href: "#faq", label: "FAQ" },
 ];
 
-export default function Header() {
+export default async function Header() {
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/70 backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-950/70">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
@@ -42,23 +48,38 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className={buttonClasses({
-              variant: "ghost",
-              size: "sm",
-              className: "hidden sm:inline-flex",
-            })}
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className={buttonClasses({ variant: "primary", size: "sm" })}
-          >
-            Get started
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          {user ? (
+            <UserMenu
+              name={user.name ?? null}
+              email={user.email ?? null}
+              image={user.image ?? null}
+              isAdmin={isPlatformAdminEmail(user.email)}
+              signOutAction={async () => {
+                "use server";
+                await signOut({ redirectTo: "/" });
+              }}
+            />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className={buttonClasses({
+                  variant: "ghost",
+                  size: "sm",
+                  className: "hidden sm:inline-flex",
+                })}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className={buttonClasses({ variant: "primary", size: "sm" })}
+              >
+                Get started
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

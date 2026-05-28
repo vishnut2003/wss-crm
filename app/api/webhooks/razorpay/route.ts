@@ -224,7 +224,7 @@ async function handleAuthenticated(event: RazorpayEvent) {
   // First time we see the customer id — back-fill it onto the owner.
   if (entity.customer_id) {
     await User.updateOne(
-      { _id: sub.owner, razorpayCustomerId: { $in: [null, "", undefined] } },
+      { _id: sub.owner, razorpayCustomerId: { $in: [null, ""] } },
       { $set: { razorpayCustomerId: entity.customer_id } },
     );
   }
@@ -244,7 +244,7 @@ async function handleActivated(event: RazorpayEvent) {
   applySubscriptionEntity(sub, entity, event.id ?? "");
   if (entity.customer_id) {
     await User.updateOne(
-      { _id: sub.owner, razorpayCustomerId: { $in: [null, "", undefined] } },
+      { _id: sub.owner, razorpayCustomerId: { $in: [null, ""] } },
       { $set: { razorpayCustomerId: entity.customer_id } },
     );
   }

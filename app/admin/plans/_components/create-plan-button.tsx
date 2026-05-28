@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import Field from "@/components/field";
 import Popup from "@/components/popup";
@@ -23,9 +23,13 @@ export default function CreatePlanButton() {
     FormData
   >(createPlan, undefined);
 
-  useEffect(() => {
+  // Auto-close on success — adjust state during render so we don't
+  // cascade into an effect (react-hooks/set-state-in-effect).
+  const [prevOk, setPrevOk] = useState(state?.ok);
+  if (state?.ok !== prevOk) {
+    setPrevOk(state?.ok);
     if (state?.ok) setOpen(false);
-  }, [state?.ok]);
+  }
 
   return (
     <>

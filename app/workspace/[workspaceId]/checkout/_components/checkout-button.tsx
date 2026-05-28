@@ -85,6 +85,8 @@ export default function CheckoutButton({
   // Open the Razorpay modal once the server action returns a subscription id.
   useEffect(() => {
     if (!state?.ok || !state.subscriptionId || !state.keyId) return;
+    const keyId = state.keyId;
+    const subscriptionId = state.subscriptionId;
 
     let cancelled = false;
     (async () => {
@@ -100,8 +102,8 @@ export default function CheckoutButton({
       }
 
       const rzp = new window.Razorpay({
-        key: state.keyId,
-        subscription_id: state.subscriptionId,
+        key: keyId,
+        subscription_id: subscriptionId,
         name: "WSS CRM",
         description: `${planLabel} plan — ${workspaceName}`,
         prefill: {

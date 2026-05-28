@@ -25,9 +25,9 @@ export default function RootLayout({
     <html lang="en" className={`${rubik.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
         <NextTopLoader
-          color="#8e51ff"
+          color="#8C00FF"
           height={2}
-          shadow="0 0 10px #8e51ff, 0 0 5px #8e51ff"
+          shadow="0 0 10px #8C00FF, 0 0 5px #8C00FF"
           showSpinner={false}
         />
         <AuthSessionProvider>{children}</AuthSessionProvider>

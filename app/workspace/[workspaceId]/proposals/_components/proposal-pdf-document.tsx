@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
   headerBar: {
     height: 6,
     width: 56,
-    backgroundColor: "#8e51ff",
+    backgroundColor: "#8C00FF",
     marginBottom: 18,
     borderRadius: 2,
   },
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   bulletDot: {
     width: 10,
     fontSize: 10.5,
-    color: "#8e51ff",
+    color: "#8C00FF",
   },
   bulletText: { flex: 1, fontSize: 10.5, color: "#1f2937" },
 

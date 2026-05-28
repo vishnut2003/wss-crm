@@ -9,8 +9,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: #8e51ff;
-  --color-secondary: #e12afb;
+  --color-primary: #8C00FF;
+  --color-secondary: #450693;
 }
 
 @media (prefers-color-scheme: dark) {

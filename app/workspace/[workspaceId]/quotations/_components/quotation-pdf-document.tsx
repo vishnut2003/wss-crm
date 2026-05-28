@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   headerBar: {
     height: 6,
     width: 48,
-    backgroundColor: "#8e51ff",
+    backgroundColor: "#8C00FF",
     marginBottom: 12,
     borderRadius: 2,
   },

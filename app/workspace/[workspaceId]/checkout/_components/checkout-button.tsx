@@ -111,7 +111,7 @@ export default function CheckoutButton({
           email: prefill.email || undefined,
         },
         notes: { workspaceId, planId },
-        theme: { color: "#8e51ff" },
+        theme: { color: "#8C00FF" },
         handler: () => {
           router.push(`/workspace/${workspaceId}?paid=1`);
           router.refresh();

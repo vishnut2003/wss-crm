@@ -9,6 +9,7 @@ import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
 import Vendor from "@/models/vendor";
 import PurchaseInvoice from "@/models/purchase-invoice";
+import PurchaseOrder from "@/models/purchase-order";
 import { getActorRole } from "@/lib/workspace-access";
 import {
   PURCHASE_INVOICE_STATUSES,
@@ -345,4 +346,152 @@ export async function deletePurchaseInvoice(
   await PurchaseInvoice.deleteOne({ _id: invoiceId, workspace: workspaceId });
   revalidatePath(`/workspace/${workspaceId}/purchase-invoices`);
   return { ok: true };
+}
+
+// Raise a fresh purchase invoice (vendor bill record) from an existing
+// purchase order. Copies vendor + items + discount + notes verbatim,
+// generates a brand-new PI number, links the invoice back to the source
+// order via `purchaseOrder`, and flips the order's status to "invoiced".
+// Mirrors the sales-side convertSalesOrderToInvoice flow.
+export async function convertPurchaseOrderToInvoice(
+  workspaceId: string,
+  orderId: string,
+): Promise<{ ok: false; error: string } | void> {
+  const ctx = await loadContext(workspaceId);
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return { ok: false, error: "Invalid purchase order id." };
+  }
+
+  const order = await PurchaseOrder.findOne({
+    _id: orderId,
+    workspace: workspaceId,
+  });
+  if (!order) return { ok: false, error: "Purchase order not found." };
+
+  if (order.status === "invoiced" || order.status === "cancelled") {
+    return {
+      ok: false,
+      error: "This order can't be converted in its current state.",
+    };
+  }
+  if (!order.items || order.items.length === 0) {
+    return { ok: false, error: "Order has no items to invoice." };
+  }
+
+  // Caller must be able to create purchase invoices. The purchase side is
+  // gated tighter than sales — sales_executive has no business raising
+  // vendor bills — so we use canManagePurchases rather than the per-record
+  // ownership check used on sales orders.
+  if (!canManagePurchases(ctx.role)) {
+    return {
+      ok: false,
+      error: "You don't have permission to convert this order.",
+    };
+  }
+
+  const invoiceItems = order.items.map((it) => ({
+    description: it.description,
+    quantity: it.quantity,
+    unitPrice: it.unitPrice,
+    taxRate: it.taxRate,
+    lineTotal: lineSubtotal({
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      taxRate: it.taxRate,
+    }),
+  }));
+  const totals = computeTotals(
+    order.items.map((it) => ({
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      taxRate: it.taxRate,
+    })),
+    order.discount ?? 0,
+  );
+  const invoiceDate = new Date();
+  const status = reconcileStatus("unpaid", totals.total, 0, null);
+
+  const assignedTo = order.assignedTo
+    ? new mongoose.Types.ObjectId(String(order.assignedTo))
+    : null;
+
+  let createdId: string | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const number = await nextNumber(workspaceId, invoiceDate.getFullYear());
+    try {
+      const created = await PurchaseInvoice.create({
+        workspace: workspaceId,
+        number,
+        // Vendor's own bill number is left blank — the buyer fills it in
+        // once they actually receive the vendor's printed invoice.
+        vendorBillNumber: "",
+        vendor: {
+          refId: order.vendor.refId ?? null,
+          name: order.vendor.name,
+          company: order.vendor.company ?? "",
+          email: order.vendor.email ?? "",
+          gstin: order.vendor.gstin ?? "",
+        },
+        purchaseOrder: order._id,
+        currency: order.currency,
+        invoiceDate,
+        dueDate: null,
+        items: invoiceItems,
+        subtotal: totals.subtotal,
+        taxTotal: totals.taxTotal,
+        discount: order.discount ?? 0,
+        total: totals.total,
+        amountPaid: 0,
+        status,
+        notes: order.notes ?? "",
+        createdBy: new mongoose.Types.ObjectId(ctx.session.user.id),
+        assignedTo,
+      });
+      createdId = String(created._id);
+      break;
+    } catch (err) {
+      const e = err as { code?: number; digest?: string };
+      if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw err;
+      if (e?.code === 11000) continue;
+      console.error("[convertPurchaseOrderToInvoice] create failed", err);
+      return {
+        ok: false,
+        error: "Couldn't create the purchase invoice. Please try again.",
+      };
+    }
+  }
+
+  if (!createdId) {
+    return {
+      ok: false,
+      error: "Couldn't allocate an invoice number. Please try again.",
+    };
+  }
+
+  // Flip the source order to "invoiced". A failure here is non-fatal — the
+  // invoice already exists; the user can hand-edit the order status.
+  try {
+    await PurchaseOrder.updateOne(
+      { _id: order._id, workspace: workspaceId },
+      { $set: { status: "invoiced" } },
+    );
+  } catch (err) {
+    console.error(
+      "[convertPurchaseOrderToInvoice] order status update failed",
+      err,
+    );
+  }
+
+  revalidatePath(`/workspace/${workspaceId}/purchase-orders`);
+  revalidatePath(`/workspace/${workspaceId}/purchase-orders/${orderId}/edit`);
+  revalidatePath(`/workspace/${workspaceId}/purchase-invoices`);
+  // The query param drives a one-time success popup on the destination page.
+  redirect(
+    `/workspace/${workspaceId}/purchase-invoices/${createdId}/edit?fromOrder=${encodeURIComponent(
+      order.number,
+    )}`,
+  );
 }

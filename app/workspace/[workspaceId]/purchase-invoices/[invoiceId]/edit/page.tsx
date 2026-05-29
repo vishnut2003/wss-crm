@@ -13,6 +13,7 @@ import {
 import type { WorkspaceColor } from "@/lib/workspace";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import PurchaseInvoiceForm from "../../_components/purchase-invoice-form";
+import ConversionSuccessPopup from "../../_components/conversion-success-popup";
 
 export const metadata: Metadata = { title: "Edit Purchase Invoice — BizvoraOne" };
 
@@ -20,10 +21,15 @@ type LeanPI = IPurchaseInvoice & { _id: { toString(): string } };
 
 type Props = {
   params: Promise<{ workspaceId: string; invoiceId: string }>;
+  searchParams: Promise<{ fromOrder?: string }>;
 };
 
-export default async function EditPurchaseInvoicePage({ params }: Props) {
+export default async function EditPurchaseInvoicePage({
+  params,
+  searchParams,
+}: Props) {
   const { workspaceId, invoiceId } = await params;
+  const { fromOrder } = await searchParams;
   if (!mongoose.Types.ObjectId.isValid(invoiceId)) notFound();
 
   const { session, workspace: doc, role } = await requireWorkspaceAccess({
@@ -115,6 +121,12 @@ export default async function EditPurchaseInvoicePage({ params }: Props) {
           }}
         />
       </div>
+      {fromOrder ? (
+        <ConversionSuccessPopup
+          sourceOrderNumber={fromOrder}
+          invoiceNumber={inv.number}
+        />
+      ) : null}
     </DashboardLayout>
   );
 }

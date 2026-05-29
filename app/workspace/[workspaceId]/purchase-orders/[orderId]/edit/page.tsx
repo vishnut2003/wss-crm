@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import mongoose from "mongoose";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRightCircle, FileText, Pencil } from "lucide-react";
 import PurchaseOrder, { type IPurchaseOrder } from "@/models/purchase-order";
 import { requireWorkspaceAccess } from "@/lib/workspace-access";
 import {
   PURCHASE_MANAGER_ROLES,
+  canManagePurchases,
   type PurchaseOrderStatus,
   type VoucherCurrency,
 } from "@/lib/voucher";
 import type { WorkspaceColor } from "@/lib/workspace";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import PurchaseOrderForm from "../../_components/purchase-order-form";
+import { convertPurchaseOrderToInvoice } from "../../../purchase-invoices/actions";
 
 export const metadata: Metadata = { title: "Edit Purchase Order — BizvoraOne" };
 
@@ -75,13 +77,35 @@ export default async function EditPurchaseOrderPage({ params }: Props) {
               </p>
             </div>
           </div>
-          <Link
-            href={`/workspace/${workspace.id}/purchase-orders/${String(order._id)}/pdf`}
-            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/70"
-          >
-            <FileText className="h-4 w-4" />
-            View PDF
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            {order.status !== "invoiced" &&
+            order.status !== "cancelled" &&
+            (order.items?.length ?? 0) > 0 &&
+            canManagePurchases(role) ? (
+              <form
+                action={convertPurchaseOrderToInvoice.bind(
+                  null,
+                  workspace.id,
+                  String(order._id),
+                )}
+              >
+                <button
+                  type="submit"
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/70"
+                >
+                  <ArrowRightCircle className="h-4 w-4 text-primary" />
+                  Convert to Invoice
+                </button>
+              </form>
+            ) : null}
+            <Link
+              href={`/workspace/${workspace.id}/purchase-orders/${String(order._id)}/pdf`}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/70"
+            >
+              <FileText className="h-4 w-4" />
+              View PDF
+            </Link>
+          </div>
         </div>
 
         <PurchaseOrderForm

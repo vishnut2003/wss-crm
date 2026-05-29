@@ -118,7 +118,6 @@ export const PAYMENT_MODE_LABEL: Record<PaymentMode, string> = {
 export const SALES_ORDER_STATUSES = [
   "draft",
   "confirmed",
-  "partially-invoiced",
   "invoiced",
   "cancelled",
 ] as const;
@@ -143,7 +142,6 @@ export type ReceiptStatus = (typeof RECEIPT_STATUSES)[number];
 export const PURCHASE_ORDER_STATUSES = [
   "draft",
   "confirmed",
-  "partially-invoiced",
   "invoiced",
   "cancelled",
 ] as const;
@@ -169,7 +167,6 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 export const SALES_ORDER_STATUS_LABEL: Record<SalesOrderStatus, string> = {
   draft: "Draft",
   confirmed: "Confirmed",
-  "partially-invoiced": "Partially invoiced",
   invoiced: "Invoiced",
   cancelled: "Cancelled",
 };
@@ -192,7 +189,6 @@ export const PURCHASE_ORDER_STATUS_LABEL: Record<PurchaseOrderStatus, string> =
   {
     draft: "Draft",
     confirmed: "Confirmed",
-    "partially-invoiced": "Partially invoiced",
     invoiced: "Invoiced",
     cancelled: "Cancelled",
   };
@@ -231,7 +227,6 @@ export const SALES_ORDER_STATUS_BADGE_CLASS: Record<SalesOrderStatus, string> =
   {
     draft: BADGE_DRAFT,
     confirmed: BADGE_BLUE,
-    "partially-invoiced": BADGE_AMBER,
     invoiced: BADGE_GREEN,
     cancelled: BADGE_ROSE,
   };

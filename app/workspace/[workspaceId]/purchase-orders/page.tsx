@@ -85,7 +85,6 @@ export default async function PurchaseOrdersPage({
   const counts: Record<PurchaseOrderStatus, number> = {
     draft: 0,
     confirmed: 0,
-    "partially-invoiced": 0,
     invoiced: 0,
     cancelled: 0,
   };

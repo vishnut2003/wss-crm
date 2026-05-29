@@ -89,7 +89,6 @@ const PAD_X = 48;
 const STATUS_PILL: Record<SalesOrderStatus, { bg: string; fg: string }> = {
   draft: { bg: "#ffffff", fg: BRAND_DEEP },
   confirmed: { bg: "#e0f2fe", fg: "#0369a1" },
-  "partially-invoiced": { bg: "#fef3c7", fg: "#b45309" },
   invoiced: { bg: "#d1fae5", fg: "#047857" },
   cancelled: { bg: "#fee2e2", fg: "#b91c1c" },
 };

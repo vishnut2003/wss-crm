@@ -365,6 +365,7 @@ export async function convertPurchaseOrderToInvoice(
     unitPrice: it.unitPrice,
     taxRate: it.taxRate,
     lineTotal: lineSubtotal({
+      description: it.description,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       taxRate: it.taxRate,
@@ -372,6 +373,7 @@ export async function convertPurchaseOrderToInvoice(
   }));
   const totals = computeTotals(
     order.items.map((it) => ({
+      description: it.description,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       taxRate: it.taxRate,

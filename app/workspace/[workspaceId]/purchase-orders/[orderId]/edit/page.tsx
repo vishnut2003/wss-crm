@@ -83,11 +83,13 @@ export default async function EditPurchaseOrderPage({ params }: Props) {
             (order.items?.length ?? 0) > 0 &&
             canManagePurchases(role) ? (
               <form
-                action={convertPurchaseOrderToInvoice.bind(
-                  null,
-                  workspace.id,
-                  String(order._id),
-                )}
+                action={async () => {
+                  "use server";
+                  await convertPurchaseOrderToInvoice(
+                    workspace.id,
+                    String(order._id),
+                  );
+                }}
               >
                 <button
                   type="submit"

@@ -258,13 +258,23 @@ export default async function PurchaseInvoicesPage({ params, searchParams }: Pro
                   canEdit={canManage}
                   hint={hint}
                   extra={
-                    canManage ? (
-                      <DeleteVoucherButton
-                        label="Remove purchase invoice"
-                        entityName={inv.number}
-                        onDelete={deletePurchaseInvoice.bind(null, workspace.id, id)}
-                      />
-                    ) : null
+                    <>
+                      <Link
+                        href={`/workspace/${workspace.id}/purchase-invoices/${id}/pdf`}
+                        aria-label={`View PDF for purchase invoice ${inv.number}`}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/70"
+                      >
+                        <FileText className="h-3 w-3" />
+                        PDF
+                      </Link>
+                      {canManage ? (
+                        <DeleteVoucherButton
+                          label="Remove purchase invoice"
+                          entityName={inv.number}
+                          onDelete={deletePurchaseInvoice.bind(null, workspace.id, id)}
+                        />
+                      ) : null}
+                    </>
                   }
                 />
               );

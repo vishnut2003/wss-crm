@@ -521,6 +521,7 @@ export default function QuotationForm({
             <div>
               <label className={labelClass}>Notes</label>
               <textarea
+                name="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
@@ -541,6 +542,7 @@ export default function QuotationForm({
             <div>
               <label className={labelClass}>Terms & conditions</label>
               <textarea
+                name="terms"
                 value={terms}
                 onChange={(e) => setTerms(e.target.value)}
                 rows={4}

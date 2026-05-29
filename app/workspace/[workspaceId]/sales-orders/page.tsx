@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, FileText, Plus } from "lucide-react";
 import type { FilterQuery } from "mongoose";
 import { format } from "date-fns";
 import SalesOrder, { type ISalesOrder } from "@/models/sales-order";
@@ -262,13 +262,23 @@ export default async function SalesOrdersPage({ params, searchParams }: Props) {
                   editHref={`/workspace/${workspace.id}/sales-orders/${id}/edit`}
                   canEdit={canManage}
                   extra={
-                    canManage ? (
-                      <DeleteVoucherButton
-                        label="Remove sales order"
-                        entityName={o.number}
-                        onDelete={deleteSalesOrder.bind(null, workspace.id, id)}
-                      />
-                    ) : null
+                    <>
+                      <Link
+                        href={`/workspace/${workspace.id}/sales-orders/${id}/pdf`}
+                        aria-label={`View PDF for sales order ${o.number}`}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/70"
+                      >
+                        <FileText className="h-3 w-3" />
+                        PDF
+                      </Link>
+                      {canManage ? (
+                        <DeleteVoucherButton
+                          label="Remove sales order"
+                          entityName={o.number}
+                          onDelete={deleteSalesOrder.bind(null, workspace.id, id)}
+                        />
+                      ) : null}
+                    </>
                   }
                 />
               );

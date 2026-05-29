@@ -441,40 +441,6 @@ export async function updateReceipt(
   redirect(`/workspace/${workspaceId}/receipts`);
 }
 
-export async function deleteReceipt(
-  workspaceId: string,
-  receiptId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const ctx = await loadContext(workspaceId);
-  if (!ctx.ok) return { ok: false, error: ctx.error };
-  if (!mongoose.Types.ObjectId.isValid(receiptId)) {
-    return { ok: false, error: "Invalid receipt id." };
-  }
-  const existing = await Receipt.findOne({
-    _id: receiptId,
-    workspace: workspaceId,
-  });
-  if (!existing) return { ok: false, error: "Receipt not found." };
-
-  const ownerIds = {
-    createdBy: String(existing.createdBy),
-    assignedTo: existing.assignedTo ? String(existing.assignedTo) : null,
-  };
-  if (!canManageVoucher(ctx.role, ctx.session.user.id, ownerIds)) {
-    return { ok: false, error: "You can't delete this receipt." };
-  }
-
-  const affected = (existing.allocations ?? []).map((a) => String(a.invoice));
-  await Receipt.deleteOne({ _id: receiptId, workspace: workspaceId });
-  if (affected.length > 0) {
-    await refreshInvoices(workspaceId, affected);
-  }
-  revalidatePath(`/workspace/${workspaceId}/receipts`);
-  revalidatePath(`/workspace/${workspaceId}/sale-invoices`);
-  revalidatePath(`/workspace/${workspaceId}/recovery`);
-  return { ok: true };
-}
-
 // Used by the Receipt form to populate the "Pick invoice" picker. Returns
 // the customer's open / partially-paid invoices.
 export async function loadOpenSalesInvoicesForCustomer(

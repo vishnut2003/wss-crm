@@ -8,6 +8,9 @@ import { auth } from "@/config/auth";
 import { connectDB } from "@/config/db";
 import Workspace from "@/models/workspace";
 import Vendor, { VENDOR_STATUSES, type VendorStatus } from "@/models/vendor";
+import Payment from "@/models/payment";
+import PurchaseInvoice from "@/models/purchase-invoice";
+import PurchaseOrder from "@/models/purchase-order";
 import { getActorRole } from "@/lib/workspace-access";
 import { canManageVendors, canViewVendors } from "@/lib/voucher";
 
@@ -252,6 +255,29 @@ export async function deleteVendor(
   }
   if (!mongoose.Types.ObjectId.isValid(vendorId)) {
     return { ok: false, error: "Invalid vendor id." };
+  }
+
+  const filter = { workspace: workspaceId, "vendor.refId": vendorId };
+  const [purchaseOrders, purchaseInvoices, payments] = await Promise.all([
+    PurchaseOrder.countDocuments(filter),
+    PurchaseInvoice.countDocuments(filter),
+    Payment.countDocuments(filter),
+  ]);
+  const linked: string[] = [];
+  if (purchaseOrders > 0) {
+    linked.push(`${purchaseOrders} purchase order${purchaseOrders === 1 ? "" : "s"}`);
+  }
+  if (purchaseInvoices > 0) {
+    linked.push(`${purchaseInvoices} purchase invoice${purchaseInvoices === 1 ? "" : "s"}`);
+  }
+  if (payments > 0) {
+    linked.push(`${payments} payment${payments === 1 ? "" : "s"}`);
+  }
+  if (linked.length > 0) {
+    return {
+      ok: false,
+      error: `Can't remove this vendor — it's linked to ${linked.join(", ")}.`,
+    };
   }
 
   await Vendor.deleteOne({ _id: vendorId, workspace: workspaceId });

@@ -28,8 +28,6 @@ import type { WorkspaceColor } from "@/lib/workspace";
 import { cn } from "@/lib/cn";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import Button from "@/components/button";
-import DeleteVoucherButton from "@/components/delete-voucher-button";
-import { deleteReceipt } from "./actions";
 
 export const metadata: Metadata = { title: "Receipts — BizvoraOne" };
 
@@ -298,19 +296,12 @@ export default async function ReceiptsPage({ params, searchParams }: Props) {
                         PDF
                       </Link>
                       {canManage ? (
-                        <>
-                          <Link href={`/workspace/${workspace.id}/receipts/${id}/edit`}>
-                            <Button type="button" variant="secondary" size="sm">
-                              <Pencil className="h-3 w-3" />
-                              Edit
-                            </Button>
-                          </Link>
-                          <DeleteVoucherButton
-                            label="Remove receipt"
-                            entityName={r.number}
-                            onDelete={deleteReceipt.bind(null, workspace.id, id)}
-                          />
-                        </>
+                        <Link href={`/workspace/${workspace.id}/receipts/${id}/edit`}>
+                          <Button type="button" variant="secondary" size="sm">
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        </Link>
                       ) : null}
                     </div>
                   </li>

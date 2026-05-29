@@ -408,34 +408,6 @@ export async function updatePayment(
   redirect(`/workspace/${workspaceId}/payments`);
 }
 
-export async function deletePayment(
-  workspaceId: string,
-  paymentId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const ctx = await loadContext(workspaceId);
-  if (!ctx.ok) return { ok: false, error: ctx.error };
-  if (!canManagePurchases(ctx.role)) {
-    return { ok: false, error: "You can't delete payments." };
-  }
-  if (!mongoose.Types.ObjectId.isValid(paymentId)) {
-    return { ok: false, error: "Invalid payment id." };
-  }
-  const existing = await Payment.findOne({
-    _id: paymentId,
-    workspace: workspaceId,
-  });
-  if (!existing) return { ok: false, error: "Payment not found." };
-
-  const affected = (existing.allocations ?? []).map((a) => String(a.invoice));
-  await Payment.deleteOne({ _id: paymentId, workspace: workspaceId });
-  if (affected.length > 0) {
-    await refreshPurchaseInvoices(workspaceId, affected);
-  }
-  revalidatePath(`/workspace/${workspaceId}/payments`);
-  revalidatePath(`/workspace/${workspaceId}/purchase-invoices`);
-  return { ok: true };
-}
-
 export async function loadOpenPurchaseInvoicesForVendor(
   workspaceId: string,
   vendorId: string,
